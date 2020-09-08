@@ -104,7 +104,6 @@ class BIN_VQE():
         if state >= self.M:
             print("ERROR: The value {} is out of bounds ({})".format(state, self.M))
             exit()
-        self.check_basis_bounds(state)
         self.state = state
     
     def initialize_circuit(self):
@@ -208,15 +207,17 @@ class BIN_VQE():
             value += partial_sum*self.integrals[2][i]
         return value
     
-    def run(self, inital_parameters=None, max_iter=1000, tol=1e-5, verbose=False, track_minimum=False):
+    def run(self, inital_parameters=None, max_iter=1000, tol=1e-5, verbose=False, filename=None, track_minimum=False):
         if inital_parameters==None:
             self.parameters = [rnd.uniform(0, 2*np.pi) for i in range(self.num_params)]
         else:
-            if len(inital_parameters) < self.num_params:
+            if len(inital_parameters) != self.num_params:
                 print("ERROR: {} parameters are insufficient for a {} qubits RyRz network of depth {}".format(len(inital_parameters), self.N, self.depth))
                 exit()
             self.parameters = inital_parameters
-
+        if(filename != None):
+            datafile = open(filename, 'w')
+        
         def target_function(params):
             value = self.compute_expectation_value(params)
             return value.real
@@ -226,6 +227,8 @@ class BIN_VQE():
             self.opt_history.append(value.real)
             if verbose==True:
                 print("{0:4d}\t{1:3.6f}".format(self.n_iter, value.real))
+            if filename != None:
+                datafile.write("{}\t{}\n".format(value.real, value.imag))
             if self.minimum_data == None:
                 self.minimum_data = {}
                 self.minimum_data['value'] = value.real
@@ -244,9 +247,11 @@ class BIN_VQE():
         else:
             self.parameters = opt_results.x
             self.expectation_value = self.compute_expectation_value(self.parameters)
+        if(filename != None):
+            datafile.close()
         return self.expectation_value.real, self.expectation_value.imag
     
-    def get_expectation_statistic(self, sample=100, verbose=False, ext_params=None):
+    def get_expectation_statistic(self, sample=100, verbose=False, filename=None, ext_params=None):
         self.expectation_statistic = {}
         self.expectation_statistic['sample'] = sample
         data = []
@@ -257,6 +262,11 @@ class BIN_VQE():
                 print("{0:4d}\t{1:3.6f}\t{2:3.6f}".format(n, value.real, value.imag))
             data.append(value)
         self.expectation_statistic['data'] = data
+        if filename != None:
+            myfile = open(filename, 'w')
+            for element in data:
+                myfile.write("{}\t{}\n".format(element.real, element.imag))
+            myfile.close()
         my_sum = 0
         for element in data:
             my_sum += element
