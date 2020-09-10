@@ -12,14 +12,14 @@ myfile.close()
 #Run a VQE calculation
 vqe = bm.BIN_VQE("VQE.txt", verbose=True, depth=1)
 vqe.configure_backend('qasm_simulator', num_shots=8192)
-real, immaginary = vqe.run(max_iter=50, tol=1e-2, filename="Iteration.txt", verbose=True, track_minimum=True)
+real, immaginary = vqe.run(method='COBYLA', max_iter=400, tol=1e-3, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 
 #Plot convergence trend
 myplt.plot_convergence("Iteration.txt", target)
 
 #Collect sampling noise using current parameters
-stats = vqe.get_expectation_statistic(sample=100, filename="Noise.txt", verbose=True)
+stats = vqe.get_expectation_statistic(sample=1000, filename="Noise.txt", verbose=True)
 print("Mean value:")
 print(stats['mean'].real)
 print(stats['mean'].imag)
@@ -28,4 +28,4 @@ print(stats['std_dev'].real)
 print(stats['std_dev'].imag)
 
 #Plot sampling noide graph with gaussian approximation
-myplt.plot_vqe_statistic("Noise.txt", bins=10, gauss=True, target=target)
+myplt.plot_vqe_statistic("Noise.txt", bins=100, gauss=True, target=target)

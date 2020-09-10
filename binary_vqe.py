@@ -51,7 +51,6 @@ class BIN_VQE():
     def __init__(self, filename, verbose=False, entanglement="full", depth=1):
         self.expectation_value = None
         self.expectation_statistic = None
-        self.minimum_data = None
         self.n_iter = 0
         self.opt_history = []
         self.state = 0
@@ -96,7 +95,7 @@ class BIN_VQE():
             print("VQE CLASS INITIALIZATION:")
             print(" -> Total number of basis functions: {}".format(self.M))
             print(" -> Required number of Qubits: {}".format(self.N))
-            print(" -> Non-zero mtrix elements: {} of {}".format(len(self.integrals[2]), self.M**2))
+            print(" -> Non-zero matrix elements: {} of {}".format(len(self.integrals[2]), self.M**2))
             print(" -> Total number of post rotations: {} of {}".format(len(self.post_rot), 3**self.N))
             print(" -> Total number of variational prameters: {}".format(self.num_params))
     
@@ -207,7 +206,7 @@ class BIN_VQE():
             value += partial_sum*self.integrals[2][i]
         return value
     
-    def run(self, inital_parameters=None, max_iter=1000, tol=1e-5, verbose=False, filename=None, track_minimum=False):
+    def run(self, method='Nelder-Mead', inital_parameters=None, max_iter=1000, tol=1e-5, verbose=False, filename=None):
         if inital_parameters==None:
             self.parameters = [rnd.uniform(0, 2*np.pi) for i in range(self.num_params)]
         else:
@@ -220,33 +219,33 @@ class BIN_VQE():
         
         def target_function(params):
             value = self.compute_expectation_value(params)
-            return value.real
-
-        def iter_callback(params):
-            value = self.compute_expectation_value(params)
             self.opt_history.append(value.real)
+            self.n_iter += 1
             if verbose==True:
                 print("{0:4d}\t{1:3.6f}".format(self.n_iter, value.real))
             if filename != None:
                 datafile.write("{}\t{}\n".format(value.real, value.imag))
-            if self.minimum_data == None:
-                self.minimum_data = {}
-                self.minimum_data['value'] = value.real
-                self.minimum_data['params'] = params
-            elif self.minimum_data['value'] > value.real:
-                self.minimum_data['value'] = value.real
-                self.minimum_data['params'] = params
-            self.n_iter += 1
+            return value.real
 
-        options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
-        opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options, callback=iter_callback)
-        print("OPTIMIZATION: {}".format(opt_results.message))
-        if track_minimum == True:
-            self.parameters = self.minimum_data['params']
-            self.expectation_value = self.compute_expectation_value(self.parameters)
+        if method == 'Nelder-Mead':
+            options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
+            opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
+        elif method == 'COBYLA':
+            constr = []
+            for arg in range(self.num_params):
+                lower = 0
+                upper = 2*np.pi
+                l = {'type': 'ineq', 'fun': lambda x, lb=lower, i=arg: x[i] - lb}
+                u = {'type': 'ineq', 'fun': lambda x, ub=upper, i=arg: ub - x[i]}
+                constr.append(l)
+                constr.append(u)
+            options = {'rhobeg':np.pi, 'tol':tol, 'disp':True, 'maxiter':max_iter, 'catol':1e-4}
+            opt_results = opt.minimize(target_function, self.parameters, method='COBYLA', constraints=constr, options=options)
         else:
-            self.parameters = opt_results.x
-            self.expectation_value = self.compute_expectation_value(self.parameters)
+            print("ERROR: {} is not a supported optimization method".format(method))
+        print("OPTIMIZATION: {}".format(opt_results.message))
+        self.parameters = opt_results.x
+        self.expectation_value = self.compute_expectation_value(self.parameters)
         if(filename != None):
             datafile.close()
         return self.expectation_value.real, self.expectation_value.imag
