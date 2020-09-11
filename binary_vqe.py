@@ -89,6 +89,7 @@ class BIN_VQE():
                 search_string = get_post_rotation(pauli_string)
                 if self.post_rot.count(search_string) == 0:
                     self.post_rot.append(search_string)
+        self.backend_name = 'qasm_simulator'
         self.backend = Aer.get_backend('qasm_simulator')
         self.shots = 1024
         if verbose==True:
@@ -139,7 +140,7 @@ class BIN_VQE():
             qc.barrier()  
         return qc
     
-    def measure(self, post_rotation):
+    def measure(self, post_rotation, measure=True):
         if len(post_rotation) != self.N:
             print("ERROR: Invalid group string passed to group_operator function\n")
             exit()
@@ -154,21 +155,42 @@ class BIN_VQE():
                 pass
         if post_rotation != "Z"*self.N:
             qc.barrier()
-        for qubit in self.qubits:
-            qc.measure(qubit, qubit)
+        if measure == True:
+            for qubit in self.qubits:
+                qc.measure(qubit, qubit)
         return qc
     
     def configure_backend(self, backend_name='qasm_simulator', num_shots=1024):
         self.backend = Aer.get_backend(backend_name)
-        self.shots = num_shots
+        self.backend_name = backend_name
+        if backend_name != 'statevector_simulator':
+            self.shots = num_shots
+        else:
+            self.shots = 1
 
     def run_circuit(self, post_rotation, parameters):
         qc = self.initialize_circuit()
         qc += self.ryrz(parameters)
-        qc += self.measure(post_rotation)
-        job = execute(qc, self.backend, shots=self.shots)
-        results = job.result()
-        counts = results.get_counts()
+        if self.backend_name == 'qasm_simulator':
+            qc += self.measure(post_rotation, measure=True)
+            job = execute(qc, self.backend, shots=self.shots)
+            results = job.result()
+            counts = results.get_counts()
+        elif self.backend_name == 'statevector_simulator':
+            qc += self.measure(post_rotation, measure=False)
+            job = execute(qc, self.backend)
+            results = job.result().get_statevector(qc)
+            sqmod_results = [np.abs(x)**2 for x in results]
+            counts = {}
+            for i, x in enumerate(sqmod_results):
+                buffer = get_bin_list(i, self.N, invert=True)
+                label = ""
+                for char in buffer:
+                    label += str(char)
+                counts[label] = x
+        else:
+            print("ERROR: Invalid backend ({})\n".format(self.backend_name))
+            exit()
         return counts
     
     def compute_pauli_expect_val(self, pauli_string, counts_data):

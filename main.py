@@ -10,9 +10,9 @@ print("Target: {}".format(target))
 myfile.close()
 
 #Run a VQE calculation
-vqe = bm.BIN_VQE("VQE.txt", verbose=True, depth=1)
-vqe.configure_backend('qasm_simulator', num_shots=8192)
-real, immaginary = vqe.run(method='COBYLA', max_iter=400, tol=1e-4, filename="Iteration.txt", verbose=True)
+vqe = bm.BIN_VQE("VQE.txt", verbose=True, depth=3)
+vqe.configure_backend('statevector_simulator')
+real, immaginary = vqe.run(method='COBYLA', max_iter=600, tol=1e-5, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 
 #Plot convergence trend
