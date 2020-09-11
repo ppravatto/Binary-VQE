@@ -206,8 +206,8 @@ class BIN_VQE():
             value += partial_sum*self.integrals[2][i]
         return value
     
-    def run(self, method='Nelder-Mead', inital_parameters=None, max_iter=1000, tol=1e-5, verbose=False, filename=None):
-        if inital_parameters==None:
+    def run(self, method='Nelder-Mead', inital_parameters=[], max_iter=1000, tol=1e-5, verbose=False, filename=None):
+        if inital_parameters==[]:
             self.parameters = [rnd.uniform(0, 2*np.pi) for i in range(self.num_params)]
         else:
             if len(inital_parameters) != self.num_params:

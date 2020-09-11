@@ -12,7 +12,7 @@ myfile.close()
 #Run a VQE calculation
 vqe = bm.BIN_VQE("VQE.txt", verbose=True, depth=1)
 vqe.configure_backend('qasm_simulator', num_shots=8192)
-real, immaginary = vqe.run(method='COBYLA', max_iter=400, tol=1e-3, filename="Iteration.txt", verbose=True)
+real, immaginary = vqe.run(method='COBYLA', max_iter=400, tol=1e-4, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 
 #Plot convergence trend
