@@ -48,17 +48,21 @@ def get_pauli_string(row_bin, col_bin, term_bin):
 
 class BIN_VQE():
 
-    def __init__(self, filename, verbose=False, entanglement="full", depth=1):
+    def __init__(self, filename, verbose=False, entanglement="full", depth=1, threshold=0):
         self.expectation_value = None
         self.expectation_statistic = None
         self.n_iter = 0
         self.opt_history = []
         self.state = 0
         self.entanglement = entanglement
-        if depth <= 0:
+        if int(depth) <= 0:
             print("ERROR: the depth of the circuit cannot be {}".format(depth))
             exit()
-        self.depth = depth
+        self.depth = int(depth)
+        if float(threshold) < 0:
+            print("ERROR: the matrix element threshold cannot be negative")
+            exit()
+        self.threshold = float(threshold)
         self.integrals = [[],[],[]]
         if os.path.isfile(filename)==True:
             myfile = open(filename, 'r')
@@ -67,7 +71,7 @@ class BIN_VQE():
                 if row==0:
                     self.M = len(myline)
                 for col, element in enumerate(myline):
-                    if float(element) != 0.:
+                    if np.abs(float(element)) > self.threshold:
                         self.integrals[0].append(int(row))
                         self.integrals[1].append(int(col))
                         self.integrals[2].append(float(element))
@@ -94,8 +98,9 @@ class BIN_VQE():
         if verbose==True:
             print("VQE CLASS INITIALIZATION:")
             print(" -> Total number of basis functions: {}".format(self.M))
-            print(" -> Required number of Qubits: {}".format(self.N))
+            print(" ---> Required number of Qubits: {}".format(self.N))
             print(" -> Non-zero matrix elements: {} of {}".format(len(self.integrals[2]), self.M**2))
+            print(" ---> Matrix element threshold: {}".format(self.threshold))
             print(" -> Total number of post rotations: {} of {}".format(len(self.post_rot), 3**self.N))
             print(" -> Total number of variational prameters: {}".format(self.num_params))
     
