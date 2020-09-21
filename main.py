@@ -1,6 +1,7 @@
 import binary_vqe as bm
 import plotter as myplt
 import numpy as np
+import time
 
 print('''
 -------------------------------------------------------------
@@ -47,7 +48,8 @@ Optimizer:
     else:
         print("ERROR: {} is not a valid entry".format(VQE_optimizer))
 
-VQE_max_iter = int(input("    -> Maximum number of iterations: "))
+VQE_max_iter = input("    -> Maximum number of iterations (default: 400): ")
+VQE_max_iter = 400 if VQE_max_iter == "" else int(VQE_max_iter)
 VQE_tol = input("    -> Optimizer tolerance (default: 1e-4): ")
 VQE_tol = 1e-4 if VQE_tol == "" else float(VQE_tol)
 
@@ -61,9 +63,13 @@ if input("    -> Do you want to load a eigenvalue list file (y/n)? ").upper() ==
     target_file = input("""         Select the file (default: "eigval_list.txt"): """)
     target_file = "eigval_list.txt" if target_file == "" else target_file
 
+statistic_flag = False
 if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
+    statistic_flag = True
     num_samples = int(input("         Select number of samples: "))
     num_bins = int(input("         Select number of bins: "))
+
+print("-------------------------------------------------------------\n")
 
 target = None
 if target_file != None:
@@ -74,22 +80,29 @@ if target_file != None:
     myfile.close()
 
 #Run a VQE calculation
+start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
 vqe.configure_backend('qasm_simulator', num_shots=VQE_shots)
 real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_max_iter, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
+print("-------------------------------------------------------------")
+print("OPTIMIZATION ENDED - Runtime: {}s".format(time.time() - start_time))
 
 #Plot convergence trend
 myplt.plot_convergence("Iteration.txt", target)
 
-#Collect sampling noise using current parameters
-stats = vqe.get_expectation_statistic(sample=num_samples, filename="Noise.txt", verbose=True)
-print("Mean value:")
-print(stats['mean'].real)
-print(stats['mean'].imag)
-print("Standard Deviation:")
-print(stats['std_dev'].real)
-print(stats['std_dev'].imag)
+if statistic_flag == True:
+    #Collect sampling noise using current parameters
+    stats = vqe.get_expectation_statistic(sample=num_samples, filename="Noise.txt", verbose=True)
+    print("Mean value:")
+    print(stats['mean'].real)
+    print(stats['mean'].imag)
+    print("Standard Deviation:")
+    print(stats['std_dev'].real)
+    print(stats['std_dev'].imag)
 
-#Plot sampling noide graph with gaussian approximation
-myplt.plot_vqe_statistic("Noise.txt", bins=num_bins, gauss=True, target=target)
+    #Plot sampling noide graph with gaussian approximation
+    myplt.plot_vqe_statistic("Noise.txt", bins=num_bins, gauss=True, target=target)
+
+print("-------------------------------------------------------------")
+print("NORMAL TERMINATION")
