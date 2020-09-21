@@ -53,9 +53,24 @@ VQE_max_iter = 400 if VQE_max_iter == "" else int(VQE_max_iter)
 VQE_tol = input("    -> Optimizer tolerance (default: 1e-4): ")
 VQE_tol = 1e-4 if VQE_tol == "" else float(VQE_tol)
 
-VQE_shots = input("\nqasm_simulator number of shots (default: 8192): ")
-VQE_shots = 8192 if VQE_shots == "" else int(VQE_shots)
-
+VQE_shots = 1
+while True:
+    VQE_backend = input('''
+Backend:
+    -> Simulators:
+        Q) QASM simulator
+        S) Statevector simulator
+    Selection: ''')
+    if VQE_backend.upper() == "Q":
+        VQE_backend = "qasm_simulator"
+        VQE_shots = input("\nqasm_simulator number of shots (default: 8192): ")
+        VQE_shots = 8192 if VQE_shots == "" else int(VQE_shots)
+        break
+    elif VQE_backend.upper() == "S":
+        VQE_backend = "statevector_simulator"
+        break
+    else:
+        print("ERROR: {} is not a valid backend".format(VQE_backend))
 
 print("\nOther options:")
 target_file = None
@@ -82,7 +97,7 @@ if target_file != None:
 #Run a VQE calculation
 start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
-vqe.configure_backend('qasm_simulator', num_shots=VQE_shots)
+vqe.configure_backend(VQE_backend, num_shots=VQE_shots)
 real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_max_iter, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
