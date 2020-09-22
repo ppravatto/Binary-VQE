@@ -30,7 +30,8 @@ Variational form: RyRz
     else:
         print("ERROR: {} is not a valid entry".format(VQE_entanglement))
 
-VQE_depth = int(input("    -> Select the variational form depth: "))
+VQE_depth = input("    -> Select the variational form depth (default: 1): ")
+VQE_depth = 1 if VQE_depth == "" else int(VQE_depth)
 
 while True:
     VQE_optimizer = input('''
@@ -88,6 +89,11 @@ if input("    -> Do you want to accumulate converged value statistic (y/n)? ").u
     num_samples = int(input("         Select number of samples: "))
     num_bins = int(input("         Select number of bins: "))
 
+if input("    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
+    threads = 0
+else:
+    threads = 1
+
 print("-------------------------------------------------------------\n")
 
 target = None
@@ -99,9 +105,15 @@ if target_file != None:
     myfile.close()
 
 #Run a VQE calculation
+simulator_options = {
+    "method": "automatic",
+    "max_parallel_threads": threads,
+    "max_parallel_experiments": threads,
+    "max_parallel_shots": 1
+    }
 start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
-vqe.configure_backend(VQE_backend, num_shots=VQE_shots)
+vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
 real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
