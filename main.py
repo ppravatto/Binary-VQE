@@ -38,6 +38,7 @@ Optimizer:
     -> Optimizer type:
         N) Nelder-Mead
         C) COBYLA
+        L) SLSQP
     Selection: ''')
     if VQE_optimizer.upper() == "N":
         VQE_optimizer = "Nelder-Mead"
@@ -45,13 +46,16 @@ Optimizer:
     elif VQE_optimizer.upper() == "C":
         VQE_optimizer = "COBYLA"
         break
+    elif VQE_optimizer.upper() == "L":
+        VQE_optimizer = "SLSQP"
+        break
     else:
         print("ERROR: {} is not a valid entry".format(VQE_optimizer))
 
 VQE_max_iter = input("    -> Maximum number of iterations (default: 400): ")
 VQE_max_iter = 400 if VQE_max_iter == "" else int(VQE_max_iter)
-VQE_tol = input("    -> Optimizer tolerance (default: 1e-4): ")
-VQE_tol = 1e-4 if VQE_tol == "" else float(VQE_tol)
+VQE_tol = input("    -> Optimizer tolerance (default: 1e-6): ")
+VQE_tol = 1e-6 if VQE_tol == "" else float(VQE_tol)
 
 VQE_shots = 1
 while True:
@@ -98,7 +102,7 @@ if target_file != None:
 start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
 vqe.configure_backend(VQE_backend, num_shots=VQE_shots)
-real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_max_iter, filename="Iteration.txt", verbose=True)
+real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
 print("OPTIMIZATION ENDED - Runtime: {}s".format(time.time() - start_time))

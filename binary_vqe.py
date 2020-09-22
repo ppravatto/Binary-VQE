@@ -254,20 +254,28 @@ class BIN_VQE():
                 datafile.write("{}\t{}\n".format(value.real, value.imag))
             return value.real
 
-        if method == 'Nelder-Mead':
-            options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
-            opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
-        elif method == 'COBYLA':
-            constr = []
+        def get_opt_constraints():
+            constraints = []
             for arg in range(self.num_params):
                 lower = 0
                 upper = 2*np.pi
                 l = {'type': 'ineq', 'fun': lambda x, lb=lower, i=arg: x[i] - lb}
                 u = {'type': 'ineq', 'fun': lambda x, ub=upper, i=arg: ub - x[i]}
-                constr.append(l)
-                constr.append(u)
+                constraints.append(l)
+                constraints.append(u)
+            return constraints
+
+        if method == 'Nelder-Mead':
+            options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
+            opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
+        elif method == 'COBYLA':
+            constr = get_opt_constraints()
             options = {'rhobeg':np.pi, 'tol':tol, 'disp':True, 'maxiter':max_iter, 'catol':1e-4}
             opt_results = opt.minimize(target_function, self.parameters, method='COBYLA', constraints=constr, options=options)
+        elif method == 'SLSQP':
+            constr = get_opt_constraints()
+            options = {'ftol':tol, 'disp':True, 'maxiter':max_iter}
+            opt_results = opt.minimize(target_function, self.parameters, method='SLSQP', constraints=constr, options=options)
         else:
             print("ERROR: {} is not a supported optimization method".format(method))
         print("OPTIMIZATION: {}".format(opt_results.message))
