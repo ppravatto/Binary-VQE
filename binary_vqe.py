@@ -176,6 +176,7 @@ class BIN_VQE():
         if simulator_options != None:
             self.simulator_options = simulator_options
 
+    #Old function to run a single post rotation circuit (not used in VQE run)
     def run_circuit(self, post_rotation, parameters):
         qc = self.initialize_circuit()
         qc += self.ryrz(parameters)
@@ -201,6 +202,49 @@ class BIN_VQE():
             exit()
         return counts
     
+    def get_circuit(self, post_rotation, parameters):
+        qc = self.initialize_circuit()
+        qc += self.ryrz(parameters)
+        if self.backend_name == 'qasm_simulator':
+            qc += self.measure(post_rotation, measure=True)
+        elif self.backend_name == 'statevector_simulator':
+            qc += self.measure(post_rotation, measure=False)
+        else:
+            print("ERROR: Invalid backend ({})\n".format(self.backend_name))
+            exit()
+        return qc
+    
+    def get_post_rotation_data(self, parameters):
+        circuit_buffer = []
+        for post_rotation in self.post_rot:
+            qc = self.get_circuit(post_rotation, parameters)
+            circuit_buffer.append(qc)
+        post_rotation_data = {}
+        if self.backend_name == 'qasm_simulator':
+            job = execute(circuit_buffer, self.backend, shots=self.shots, backend_options=self.simulator_options)
+            results = job.result()
+            counts = results.get_counts()
+            for index, post_rotation in enumerate(self.post_rot):
+                post_rotation_data[post_rotation] = counts[index]
+        elif self.backend_name == 'statevector_simulator':
+            job = execute(circuit_buffer, self.backend, backend_options=self.simulator_options)
+            job_results = job.result()
+            for index, post_rotation in enumerate(self.post_rot):
+                result = job_results.results[index].data.statevector
+                sqmod_results = [np.abs(x)**2 for x in result]
+                counts = {}
+                for i, x in enumerate(sqmod_results):
+                    buffer = get_bin_list(i, self.N, invert=True)
+                    label = ""
+                    for char in buffer:
+                        label += str(char)
+                    counts[label] = x
+                post_rotation_data[post_rotation] = counts
+        else:
+            print("ERROR: Invalid backend ({})\n".format(self.backend_name))
+            exit()
+        return post_rotation_data
+
     def compute_pauli_expect_val(self, pauli_string, counts_data):
         value = 0
         for state in range(2**self.N):
@@ -218,10 +262,8 @@ class BIN_VQE():
         return value/self.shots
             
     def compute_expectation_value(self, parameters):
-        post_rotation_data = {}
-        for post_rotation in self.post_rot:
-            post_rotation_data[post_rotation] = self.run_circuit(post_rotation, parameters)
         value = 0
+        post_rotation_data = self.get_post_rotation_data(parameters)
         for i, row in enumerate(self.integrals[0]):
             col = self.integrals[1][i]
             row_bin = get_bin_list(row, self.N)
