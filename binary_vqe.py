@@ -96,6 +96,7 @@ class BIN_VQE():
         self.backend_name = 'qasm_simulator'
         self.backend = Aer.get_backend('qasm_simulator')
         self.shots = 1024
+        self.simulator_options = {"method": "automatic"}
         if verbose==True:
             print("VQE CLASS INITIALIZATION:")
             print(" -> Total number of basis functions: {}".format(self.M))
@@ -165,25 +166,27 @@ class BIN_VQE():
                 qc.measure(qubit, qubit)
         return qc
     
-    def configure_backend(self, backend_name='qasm_simulator', num_shots=1024):
+    def configure_backend(self, backend_name='qasm_simulator', num_shots=1024, simulator_options=None):
         self.backend = Aer.get_backend(backend_name)
         self.backend_name = backend_name
         if backend_name != 'statevector_simulator':
             self.shots = num_shots
         else:
             self.shots = 1
+        if simulator_options != None:
+            self.simulator_options = simulator_options
 
     def run_circuit(self, post_rotation, parameters):
         qc = self.initialize_circuit()
         qc += self.ryrz(parameters)
         if self.backend_name == 'qasm_simulator':
             qc += self.measure(post_rotation, measure=True)
-            job = execute(qc, self.backend, shots=self.shots)
+            job = execute(qc, self.backend, shots=self.shots, backend_options=self.simulator_options)
             results = job.result()
             counts = results.get_counts()
         elif self.backend_name == 'statevector_simulator':
             qc += self.measure(post_rotation, measure=False)
-            job = execute(qc, self.backend)
+            job = execute(qc, self.backend, backend_options=self.simulator_options)
             results = job.result().get_statevector(qc)
             sqmod_results = [np.abs(x)**2 for x in results]
             counts = {}

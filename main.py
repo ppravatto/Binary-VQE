@@ -95,9 +95,15 @@ if target_file != None:
     myfile.close()
 
 #Run a VQE calculation
+simulator_options = {
+    "method": "statevector",
+    "max_parallel_threads": 0,
+    "max_parallel_experiments": 1,
+    "max_parallel_shots": 0
+    }
 start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
-vqe.configure_backend(VQE_backend, num_shots=VQE_shots)
+vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
 real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_max_iter, filename="Iteration.txt", verbose=True)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
