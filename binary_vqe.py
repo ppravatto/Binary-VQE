@@ -1,5 +1,6 @@
 import os
 from qiskit import *
+from qiskit.aqua.components.optimizers.spsa import SPSA
 import numpy as np
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
@@ -321,10 +322,16 @@ class BIN_VQE():
             constr = get_opt_constraints()
             options = {'ftol':tol, 'disp':True, 'maxiter':max_iter}
             opt_results = opt.minimize(target_function, self.parameters, method='SLSQP', constraints=constr, options=options)
+        elif method == 'SPSA':
+            optimizer = SPSA()
+            optimizer.maxiter=max_iter
+            bounds = [(0, 2*np.pi) for i in range(self.num_params)]
+            opt_results, final_expectation, _dummy = optimizer.optimize(self.num_params, target_function, variable_bounds=bounds, initial_point=self.parameters)
         else:
             print("ERROR: {} is not a supported optimization method".format(method))
-        print("OPTIMIZATION: {}".format(opt_results.message))
-        self.parameters = opt_results.x
+        if method != 'SPSA':
+            print("OPTIMIZATION: {}".format(opt_results.message))
+        self.parameters = opt_results.x if method != 'SPSA' else opt_results
         self.expectation_value = self.compute_expectation_value(self.parameters)
         if(filename != None):
             datafile.close()

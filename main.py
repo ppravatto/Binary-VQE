@@ -40,6 +40,7 @@ Optimizer:
         N) Nelder-Mead
         C) COBYLA
         L) SLSQP
+        S) SPSA
     Selection: ''')
     if VQE_optimizer.upper() == "N":
         VQE_optimizer = "Nelder-Mead"
@@ -49,6 +50,9 @@ Optimizer:
         break
     elif VQE_optimizer.upper() == "L":
         VQE_optimizer = "SLSQP"
+        break
+    elif VQE_optimizer.upper() == "S":
+        VQE_optimizer = "SPSA"
         break
     else:
         print("ERROR: {} is not a valid entry".format(VQE_optimizer))
