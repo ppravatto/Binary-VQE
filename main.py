@@ -63,11 +63,20 @@ Optimizer:
 VQE_max_iter = input("    -> Maximum number of iterations (default: 400): ")
 VQE_max_iter = 400 if VQE_max_iter == "" else int(VQE_max_iter)
 
-if VQE_optimizer != "SPSA":
+opt_options = {}
+if VQE_optimizer == "SPSA":
+    VQE_tol = None
+    if input("    -> Do you want to define custom coefficents for SPSA (y/n)? ").upper() == "Y":
+        print("       Select the parameters (Press enter to select the default value):")
+        for i in range(5):
+            label = 'c' + str(i)
+            buffer = input("        " + label + ": ")
+            if buffer != "":
+                opt_options[label] = float(buffer)
+else:
     VQE_tol = input("    -> Optimizer tolerance (default: 1e-6): ")
     VQE_tol = 1e-6 if VQE_tol == "" else float(VQE_tol)
-else:
-    VQE_tol = None
+    
 
 VQE_shots = 1
 while True:
@@ -79,7 +88,7 @@ Backend:
     Selection: ''')
     if VQE_backend.upper() == "Q":
         VQE_backend = "qasm_simulator"
-        VQE_shots = input("\nqasm_simulator number of shots (default: 8192): ")
+        VQE_shots = input("    qasm_simulator number of shots (default: 8192): ")
         VQE_shots = 8192 if VQE_shots == "" else int(VQE_shots)
         break
     elif VQE_backend.upper() == "S":
@@ -125,10 +134,10 @@ simulator_options = {
 start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
 vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
-real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True)
+real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True, optimizer_options=opt_options)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
-print("OPTIMIZATION ENDED - Runtime: {}s".format(time.time() - start_time))
+print("OPTIMIZATION TERMINATED - Runtime: {}s".format(time.time() - start_time))
 
 #Plot convergence trend
 myplt.plot_convergence("Iteration.txt", target)

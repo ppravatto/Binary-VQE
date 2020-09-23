@@ -106,6 +106,7 @@ class BIN_VQE():
             print(" ---> Matrix element threshold: {}".format(self.threshold))
             print(" -> Total number of post rotations: {} of {}".format(len(self.post_rot), 3**self.N))
             print(" -> Total number of variational prameters: {}".format(self.num_params))
+            print("")
     
     def set_initial_state(self, state):
         if state >= self.M:
@@ -279,7 +280,7 @@ class BIN_VQE():
             value += partial_sum*self.integrals[2][i]
         return value
     
-    def run(self, method='Nelder-Mead', inital_parameters=[], max_iter=1000, tol=1e-5, verbose=False, filename=None):
+    def run(self, method='Nelder-Mead', inital_parameters=[], max_iter=1000, tol=1e-5, verbose=False, filename=None, optimizer_options={}):
         if inital_parameters==[]:
             self.parameters = [rnd.uniform(0, 2*np.pi) for i in range(self.num_params)]
         else:
@@ -311,6 +312,7 @@ class BIN_VQE():
                 constraints.append(u)
             return constraints
 
+        print("OPTIMIZATION STARTED")
         if method == 'Nelder-Mead':
             options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
             opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
@@ -323,13 +325,21 @@ class BIN_VQE():
             options = {'ftol':tol, 'disp':True, 'maxiter':max_iter}
             opt_results = opt.minimize(target_function, self.parameters, method='SLSQP', constraints=constr, options=options)
         elif method == 'SPSA':
-            optimizer = spsa.SPSA(max_trials=max_iter)
+            default_spsa_c = [0.6283185307179586, 0.1, 0.602, 0.101, 0]
+            _c = []
+            for i in range(5):
+                label = "c" + str(i)
+                _c.append(optimizer_options[label] if label in optimizer_options else default_spsa_c[i])
+            print("-> SPSA optimizer coefficients:", _c)
+            optimizer = spsa.SPSA(max_trials=max_iter, c0=_c[0], c1=_c[1], c2=_c[2], c3=_c[3], c4=_c[4])
             bounds = [(0, 2*np.pi) for i in range(self.num_params)]
             opt_results, final_expectation, _dummy = optimizer.optimize(self.num_params, target_function, variable_bounds=bounds, initial_point=self.parameters)
         else:
             print("ERROR: {} is not a supported optimization method".format(method))
         if method != 'SPSA':
             print("OPTIMIZATION: {}".format(opt_results.message))
+        else:
+            print("OPTIMIZATION ENDED")
         self.parameters = opt_results.x if method != 'SPSA' else opt_results
         self.expectation_value = self.compute_expectation_value(self.parameters)
         if(filename != None):
