@@ -1,0 +1,13 @@
+jupyter>=1.0.0
+matplotlib>=3.2.1
+numpy>=1.18.4
+pandas>=1.0.3
+qiskit>=0.19.2
+qiskit-aer>=0.5.1
+qiskit-aqua>=0.7.1
+qiskit-ibmq-provider>=0.7.1
+qiskit-ignis>=0.3.0
+qiskit-terra>=0.14.1
+scipy>=1.4.1
+seaborn>=0.10.1
+sympy>=1.6
