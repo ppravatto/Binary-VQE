@@ -20,12 +20,15 @@ Variational form: RyRz
     -> Entangle type: 
            F) Full entanglement between qubits
            L) Linear entanglement between qubits
-       Selection: ''')
+       Selection (default: F): ''')
     if VQE_entanglement.upper() == "F":
         VQE_entanglement = "full"
         break
     elif VQE_entanglement.upper() == "L":
         VQE_entanglement = "linear"
+        break
+    elif VQE_entanglement.upper() == "":
+        VQE_entanglement = "full"
         break
     else:
         print("ERROR: {} is not a valid entry".format(VQE_entanglement))
@@ -59,8 +62,12 @@ Optimizer:
 
 VQE_max_iter = input("    -> Maximum number of iterations (default: 400): ")
 VQE_max_iter = 400 if VQE_max_iter == "" else int(VQE_max_iter)
-VQE_tol = input("    -> Optimizer tolerance (default: 1e-6): ")
-VQE_tol = 1e-6 if VQE_tol == "" else float(VQE_tol)
+
+if VQE_optimizer != "SPSA":
+    VQE_tol = input("    -> Optimizer tolerance (default: 1e-6): ")
+    VQE_tol = 1e-6 if VQE_tol == "" else float(VQE_tol)
+else:
+    VQE_tol = None
 
 VQE_shots = 1
 while True:
