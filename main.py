@@ -5,7 +5,7 @@ import time, os
 from datetime import datetime
 
 start_date = datetime.now()
-contracted_date = start_date.strftime("%d%m%Y_%H%M%S")
+contracted_date = start_date.strftime("%d%m_%H%M%S")
 
 print('''
 -------------------------------------------------------------
@@ -160,7 +160,32 @@ vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simula
 real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
-print("OPTIMIZATION TERMINATED - Runtime: {}s".format(time.time() - start_time))
+vqe_runtime = time.time() - start_time
+print("OPTIMIZATION TERMINATED - Runtime: {}s".format(vqe_runtime))
+
+report_file = folder + "/" + contracted_name + "_report.txt"
+report = open(report_file, 'w')
+report.write("Date: {}\n".format(start_date.strftime("%d/%m/%Y")))
+report.write("Time: {}\n\n".format(start_date.strftime("%H:%M:%S")))
+report.write("VQE SETTINGS:\n")
+report.write("Entangler type: {}, depth: {}\n".format(VQE_entanglement, VQE_depth))
+report.write("Optimizer: {}, Max Iter: {}\n".format(VQE_optimizer, VQE_max_iter))
+if VQE_optimizer != "SPSA":
+    report.write("Tol: {}\n".format(VQE_tol))
+else:
+    report.write("\n")
+report.write("Backend: {}, Shots: {}\n\n".format(VQE_backend, VQE_shots))
+report.write("SYSTEM DATA:\n")
+report.write("Number of basis functions: {}, Qubits count: {}\n".format(vqe.M, vqe.N))
+report.write("Non-zero matrix elements: {} of {}, Threshold: {}\n".format(len(vqe.integrals[2]), vqe.M**2, VQE_threshold))
+report.write("Total number of post rotations: {}\n\n".format(len(vqe.post_rot)))
+report.write("CALCULATION DATA:\n")
+report.write("Expectation value: Real part: {}, Imag part: {}\n".format(real, immaginary))
+if target_file != None:
+    rel_error = (real-target)/target
+    report.write("Theoretical value: {}, Relative Error: {}\n".format(target, rel_error))
+report.write("Runtime: {}s\n".format(vqe_runtime))
+report.close()
 
 #Plot convergence trend
 picture_name = folder + "/" + contracted_name + "_convergence.png"
