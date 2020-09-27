@@ -7,7 +7,7 @@ plt.rc('text', usetex=True)
 def unitary_height_gaussian(x, c, w):
     return np.exp(-(x-c)**2/(2*w**2))
 
-def plot_convergence(filename, target=None):
+def plot_convergence(filename, target=None, save_plot=True, path=None):
     myfile = open(filename, 'r')
     data = [[],[],[]]
     for index, line in enumerate(myfile):
@@ -25,10 +25,12 @@ def plot_convergence(filename, target=None):
     plt.xlabel("Iterations")
     plt.ylabel("Expectation value")
     plt.tight_layout()
-    plt.savefig("Convergence.png", dpi=600)
+    if save_plot == True:
+        fig_name = "convergence.png" if path == None else path
+        plt.savefig(fig_name, dpi=600)
     plt.show()
 
-def plot_vqe_statistic(filename, bins=100, gauss=False, target=None):
+def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None):
     myfile = open(filename, 'r')
     data = [[],[]]
     for index, line in enumerate(myfile):
@@ -56,6 +58,8 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None):
         plt.plot([0, max(hist_data[0])], [target, target], color='red', linestyle='--')
     plt.xlabel("Number of sample")
     plt.ylabel("Expectation value")
-    plt.savefig("Sampling_noise.png", dpi=600)
+    if save_plot == True:
+        fig_name = "sampling_noise.png" if path == None else path
+        plt.savefig(fig_name, dpi=600)
     plt.show()
 

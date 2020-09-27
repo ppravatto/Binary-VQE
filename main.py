@@ -1,7 +1,11 @@
 import binary_vqe as bm
 import plotter as myplt
 import numpy as np
-import time
+import time, os
+from datetime import datetime
+
+start_date = datetime.now()
+contracted_date = start_date.strftime("%d%m%Y_%H%M%S")
 
 print('''
 -------------------------------------------------------------
@@ -14,6 +18,8 @@ VQE_file = "VQE.txt" if VQE_file == "" else VQE_file
 VQE_threshold = input("    -> Select matrix element threshold: (default: 0): " )
 VQE_threshold = 0 if VQE_threshold == "" else float(VQE_threshold)
 
+contracted_name = ""
+
 while True:
     VQE_entanglement = input('''
 Variational form: RyRz
@@ -21,20 +27,21 @@ Variational form: RyRz
            F) Full entanglement between qubits
            L) Linear entanglement between qubits
        Selection (default: F): ''')
-    if VQE_entanglement.upper() == "F":
+    if VQE_entanglement.upper() == "F" or VQE_entanglement.upper() == "":
         VQE_entanglement = "full"
+        contracted_name += "F"
         break
     elif VQE_entanglement.upper() == "L":
         VQE_entanglement = "linear"
-        break
-    elif VQE_entanglement.upper() == "":
-        VQE_entanglement = "full"
+        contracted_name += "L"
         break
     else:
         print("ERROR: {} is not a valid entry".format(VQE_entanglement))
 
 VQE_depth = input("    -> Select the variational form depth (default: 1): ")
 VQE_depth = 1 if VQE_depth == "" else int(VQE_depth)
+contracted_name += str(VQE_depth)
+contracted_name += "_"
 
 while True:
     VQE_optimizer = input('''
@@ -47,18 +54,24 @@ Optimizer:
     Selection: ''')
     if VQE_optimizer.upper() == "N":
         VQE_optimizer = "Nelder-Mead"
+        contracted_name += "N"
         break
     elif VQE_optimizer.upper() == "C":
         VQE_optimizer = "COBYLA"
+        contracted_name += "C"
         break
     elif VQE_optimizer.upper() == "L":
         VQE_optimizer = "SLSQP"
+        contracted_name += "L"
         break
     elif VQE_optimizer.upper() == "S":
         VQE_optimizer = "SPSA"
+        contracted_name += "S"
         break
     else:
         print("ERROR: {} is not a valid entry".format(VQE_optimizer))
+
+contracted_name += "_"
 
 VQE_max_iter = input("    -> Maximum number of iterations (default: 400): ")
 VQE_max_iter = 400 if VQE_max_iter == "" else int(VQE_max_iter)
@@ -76,8 +89,7 @@ if VQE_optimizer == "SPSA":
 else:
     VQE_tol = input("    -> Optimizer tolerance (default: 1e-6): ")
     VQE_tol = 1e-6 if VQE_tol == "" else float(VQE_tol)
-    
-
+   
 VQE_shots = 1
 while True:
     VQE_backend = input('''
@@ -87,11 +99,18 @@ Backend:
         S) Statevector simulator
     Selection: ''')
     if VQE_backend.upper() == "Q":
+        contracted_name += "Q"
         VQE_backend = "qasm_simulator"
         VQE_shots = input("    qasm_simulator number of shots (default: 8192): ")
         VQE_shots = 8192 if VQE_shots == "" else int(VQE_shots)
+        if VQE_shots%1000 == 0:
+            contracted_name += str(int(VQE_shots/1000))
+            contracted_name += "k"
+        else:
+            contracted_name += str(VQE_shots)
         break
     elif VQE_backend.upper() == "S":
+        contracted_name += "S"
         VQE_backend = "statevector_simulator"
         break
     else:
@@ -116,6 +135,9 @@ else:
 
 print("-------------------------------------------------------------\n")
 
+folder = contracted_date + "_" + contracted_name
+os.mkdir(folder)
+
 target = None
 if target_file != None:
     myfile = open(target_file, 'r')
@@ -133,18 +155,21 @@ simulator_options = {
     }
 start_time = time.time()
 vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
+iteration_file = folder + "/" + contracted_name + "_iteration.txt"
 vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
-real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True, optimizer_options=opt_options)
+real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
 print("OPTIMIZATION TERMINATED - Runtime: {}s".format(time.time() - start_time))
 
 #Plot convergence trend
-myplt.plot_convergence("Iteration.txt", target)
+picture_name = folder + "/" + contracted_name + "_convergence.png"
+myplt.plot_convergence(iteration_file, target, path=picture_name)
 
 if statistic_flag == True:
     #Collect sampling noise using current parameters
-    stats = vqe.get_expectation_statistic(sample=num_samples, filename="Noise.txt", verbose=True)
+    statistic_file = folder + "/" + contracted_name + "_noise.txt"
+    stats = vqe.get_expectation_statistic(sample=num_samples, filename=statistic_file, verbose=True)
     print("Mean value:")
     print(stats['mean'].real)
     print(stats['mean'].imag)
@@ -153,7 +178,8 @@ if statistic_flag == True:
     print(stats['std_dev'].imag)
 
     #Plot sampling noide graph with gaussian approximation
-    myplt.plot_vqe_statistic("Noise.txt", bins=num_bins, gauss=True, target=target)
+    picture_name = folder + "/" + contracted_name + "_noise.png"
+    myplt.plot_vqe_statistic(statistic_file, bins=num_bins, gauss=True, target=target, path=picture_name)
 
 print("-------------------------------------------------------------")
 print("NORMAL TERMINATION")
