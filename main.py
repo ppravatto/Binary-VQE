@@ -17,7 +17,7 @@ VQE_threshold = 0 if VQE_threshold == "" else float(VQE_threshold)
 while True:
     VQE_entanglement = input('''
 Variational form: RyRz
-    -> Entangle type: 
+    -> Entangler type: 
            F) Full entanglement between qubits
            L) Linear entanglement between qubits
        Selection (default: F): ''')
@@ -106,8 +106,10 @@ if input("    -> Do you want to load a eigenvalue list file (y/n)? ").upper() ==
 statistic_flag = False
 if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
     statistic_flag = True
-    num_samples = int(input("         Select number of samples: "))
-    num_bins = int(input("         Select number of bins: "))
+    num_samples = input("         Select number of samples (default: 1000): ")
+    num_samples = 1000 if num_samples == "" else int(num_samples)
+    num_bins = input("         Select number of bins (default: 50): ")
+    num_bins = 50 if num_bins == "" else int(num_bins)
 
 if input("    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
     threads = 0
