@@ -63,7 +63,7 @@ def build_hamiltonian_with_aqua(op, coeff, pauli_string):
 
 class BIN_VQE():
 
-    def __init__(self, filename, verbose=False, entanglement="full", depth=1, threshold=0):
+    def __init__(self, filename, expectation_value, verbose=False, entanglement="full", depth=1, threshold=0):
         self.expectation_value = None
         self.expectation_statistic = None
         self.n_iter = 0

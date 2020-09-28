@@ -47,7 +47,7 @@ Expectation value:
         Expectation_value = "Direct"
         break
     elif Expectation_value.upper() == "G":
-        Expectation_value.upper() = "Graph_coloring"
+        Expectation_value = "Graph_coloring"
         break
     else:
         print("ERROR: {} is not a valid entry".format(Expectation_value))
@@ -149,7 +149,7 @@ simulator_options = {
     "max_parallel_shots": 1
     }
 start_time = time.time()
-vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
+vqe = bm.BIN_VQE(VQE_file, Expectation_value, verbose=True, depth=VQE_depth)
 vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
 real, immaginary = vqe.run(expectation_value = Expectation_value, method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True, optimizer_options=opt_options)
 print("Expectation value: {} + {}j".format(real, immaginary))
