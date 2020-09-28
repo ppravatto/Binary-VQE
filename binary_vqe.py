@@ -97,7 +97,7 @@ class BIN_VQE():
         self.N = int(np.ceil(np.log2(self.M)))
         self.qubits = range(self.N)
         self.num_params = 2*(1+self.depth)*self.N
-        self.hamiltonian = Operator(np.zeros(2**(self.N), 2**(self.N)), (2**(self.N-1),2), (2,2**(self.N-1)))
+        self.hamiltonian = Operator(np.zeros((2**(self.N), 2**(self.N))), (2**(self.N-1),2), (2,2**(self.N-1)))
         self.post_rot = []
         for i, row in enumerate(self.integrals[0]):
             col = self.integrals[1][i]
