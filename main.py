@@ -4,17 +4,19 @@ import numpy as np
 import time, os
 from datetime import datetime
 
-start_date = datetime.now()
-contracted_date = start_date.strftime("%d%m_%H%M%S")
+os.system('cls' if os.name == 'nt' else 'clear')
 
-print('''
--------------------------------------------------------------
+print('''-------------------------------------------------------------
                         BINARY VQE
 -------------------------------------------------------------
 ''')
 
 VQE_file = input("""Select the Hamiltonian matrix file (default: "VQE.txt"): """)
 VQE_file = "VQE.txt" if VQE_file == "" else VQE_file
+if os.path.isfile(VQE_file)==False:
+    print("ERROR: {} datafile not found\n".format(VQE_file))
+    exit()
+
 VQE_threshold = input("    -> Select matrix element threshold: (default: 0): " )
 VQE_threshold = 0 if VQE_threshold == "" else float(VQE_threshold)
 
@@ -138,14 +140,18 @@ target_file = None
 if input("    -> Do you want to load a eigenvalue list file (y/n)? ").upper() == "Y":
     target_file = input("""         Select the file (default: "eigval_list.txt"): """)
     target_file = "eigval_list.txt" if target_file == "" else target_file
+    if os.path.isfile(target_file)==False:
+        print("ERROR: {} datafile not found\n".format(target_file))
+        exit()
 
 statistic_flag = False
-if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
-    statistic_flag = True
-    num_samples = input("         Select number of samples (default: 1000): ")
-    num_samples = 1000 if num_samples == "" else int(num_samples)
-    num_bins = input("         Select number of bins (default: 50): ")
-    num_bins = 50 if num_bins == "" else int(num_bins)
+if VQE_backend != "statevector_simulator":
+    if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
+        statistic_flag = True
+        num_samples = input("         Select number of samples (default: 1000): ")
+        num_samples = 1000 if num_samples == "" else int(num_samples)
+        num_bins = input("         Select number of bins (default: 50): ")
+        num_bins = 50 if num_bins == "" else int(num_bins)
 
 if VQE_exp_val_method == "direct":
     if input("    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
@@ -155,9 +161,6 @@ if VQE_exp_val_method == "direct":
 
 print("-------------------------------------------------------------\n")
 
-folder = contracted_date + "_" + contracted_name
-os.mkdir(folder)
-
 target = None
 if target_file != None:
     myfile = open(target_file, 'r')
@@ -166,65 +169,85 @@ if target_file != None:
     print("Target: {}".format(target))
     myfile.close()
 
-#Run a VQE calculation
-simulator_options = {
-    "method": "automatic",
-    "max_parallel_threads": threads,
-    "max_parallel_experiments": threads,
-    "max_parallel_shots": 1
-    }
-start_time = time.time()
-vqe = bm.BIN_VQE(VQE_file, method=VQE_exp_val_method, verbose=True, depth=VQE_depth)
-vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
-iteration_file = folder + "/" + contracted_name + "_iteration.txt"
-real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
-print("Expectation value: {} + {}j".format(real, immaginary))
-print("-------------------------------------------------------------")
-vqe_runtime = time.time() - start_time
-print("OPTIMIZATION TERMINATED - Runtime: {}s".format(vqe_runtime))
+while True:
+    start_date = datetime.now()
+    contracted_date = start_date.strftime("%d%m_%H%M%S")
+    folder = contracted_date + "_" + contracted_name
+    os.mkdir(folder)
 
-report_file = folder + "/" + contracted_name + "_report.txt"
-report = open(report_file, 'w')
-report.write("Date: {}\n".format(start_date.strftime("%d/%m/%Y")))
-report.write("Time: {}\n\n".format(start_date.strftime("%H:%M:%S")))
-report.write("VQE SETTINGS:\n")
-report.write("Entangler type: {}, depth: {}\n".format(VQE_entanglement, VQE_depth))
-report.write("Optimizer: {}, Max Iter: {}\n".format(VQE_optimizer, VQE_max_iter))
-if VQE_optimizer != "SPSA":
-    report.write("Tol: {}\n".format(VQE_tol))
-else:
-    report.write("\n")
-report.write("Backend: {}, Shots: {}\n\n".format(VQE_backend, VQE_shots))
-report.write("SYSTEM DATA:\n")
-report.write("Number of basis functions: {}, Qubits count: {}\n".format(vqe.M, vqe.N))
-report.write("Non-zero matrix elements: {} of {}, Threshold: {}\n".format(len(vqe.integrals[2]), vqe.M**2, VQE_threshold))
-report.write("Total number of post rotations: {}\n\n".format(len(vqe.post_rot)))
-report.write("CALCULATION DATA:\n")
-report.write("Expectation value: Real part: {}, Imag part: {}\n".format(real, immaginary))
-if target_file != None:
-    rel_error = (real-target)/target
-    report.write("Theoretical value: {}, Relative Error: {}\n".format(target, rel_error))
-report.write("Runtime: {}s\n".format(vqe_runtime))
-report.close()
+    #Run a VQE calculation
+    if VQE_exp_val_method == "direct":
+        simulator_options = {
+            "method": "automatic",
+            "max_parallel_threads": threads,
+            "max_parallel_experiments": threads,
+            "max_parallel_shots": 1
+            }
+    else:
+        simulator_options = {
+            "method": "automatic"
+        }
 
-#Plot convergence trend
-picture_name = folder + "/" + contracted_name + "_convergence.png"
-myplt.plot_convergence(iteration_file, target, path=picture_name)
+    start_time = time.time()
+    vqe = bm.BIN_VQE(VQE_file, method=VQE_exp_val_method, verbose=True, depth=VQE_depth)
+    vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
+    iteration_file = folder + "/" + contracted_name + "_iteration.txt"
+    real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
+    print("Expectation value: {} + {}j".format(real, immaginary))
+    print("-------------------------------------------------------------")
+    vqe_runtime = time.time() - start_time
+    print("OPTIMIZATION TERMINATED - Runtime: {}s".format(vqe_runtime))
 
-if statistic_flag == True:
-    #Collect sampling noise using current parameters
-    statistic_file = folder + "/" + contracted_name + "_noise.txt"
-    stats = vqe.get_expectation_statistic(sample=num_samples, filename=statistic_file, verbose=True)
-    print("Mean value:")
-    print(stats['mean'].real)
-    print(stats['mean'].imag)
-    print("Standard Deviation:")
-    print(stats['std_dev'].real)
-    print(stats['std_dev'].imag)
+    report_file = folder + "/" + contracted_name + "_report.txt"
+    report = open(report_file, 'w')
+    report.write("Date: {}\n".format(start_date.strftime("%d/%m/%Y")))
+    report.write("Time: {}\n\n".format(start_date.strftime("%H:%M:%S")))
+    report.write("VQE SETTINGS:\n")
+    report.write("Entangler type: {}, depth: {}\n".format(VQE_entanglement, VQE_depth))
+    report.write("Optimizer: {}, Max Iter: {}\n".format(VQE_optimizer, VQE_max_iter))
+    if VQE_optimizer != "SPSA":
+        report.write("Tol: {}\n".format(VQE_tol))
+    else:
+        report.write("\n")
+    report.write("Backend: {}, Shots: {}\n\n".format(VQE_backend, VQE_shots))
+    report.write("SYSTEM DATA:\n")
+    report.write("Number of basis functions: {}, Qubits count: {}\n".format(vqe.M, vqe.N))
+    report.write("Non-zero matrix elements: {} of {}, Threshold: {}\n".format(len(vqe.integrals[2]), vqe.M**2, VQE_threshold))
+    report.write("Total number of post rotations: {}\n\n".format(len(vqe.post_rot)))
+    report.write("CALCULATION DATA:\n")
+    report.write("Expectation value: Real part: {}, Imag part: {}\n".format(real, immaginary))
+    if target_file != None:
+        rel_error = (real-target)/target
+        report.write("Theoretical value: {}, Relative Error: {}\n".format(target, rel_error))
+    report.write("Runtime: {}s\n".format(vqe_runtime))
+    report.close()
 
-    #Plot sampling noide graph with gaussian approximation
-    picture_name = folder + "/" + contracted_name + "_noise.png"
-    myplt.plot_vqe_statistic(statistic_file, bins=num_bins, gauss=True, target=target, path=picture_name)
+    #Plot convergence trend
+    picture_name = folder + "/" + contracted_name + "_convergence.png"
+    myplt.plot_convergence(iteration_file, target, path=picture_name)
 
-print("-------------------------------------------------------------")
-print("NORMAL TERMINATION")
+    aux_statistic_flag = "N"
+    if statistic_flag == True:
+        aux_statistic_flag = input("Would you like to skip the statistic accumulation for this run (y/n)? ")
+    
+    if statistic_flag == True and aux_statistic_flag.upper() != "Y":
+        #Collect sampling noise using current parameters
+        statistic_file = folder + "/" + contracted_name + "_noise.txt"
+        stats = vqe.get_expectation_statistic(sample=num_samples, filename=statistic_file, verbose=True)
+        print("Mean value:")
+        print(stats['mean'].real)
+        print(stats['mean'].imag)
+        print("Standard Deviation:")
+        print(stats['std_dev'].real)
+        print(stats['std_dev'].imag)
+
+        #Plot sampling noide graph with gaussian approximation
+        picture_name = folder + "/" + contracted_name + "_noise.png"
+        myplt.plot_vqe_statistic(statistic_file, bins=num_bins, gauss=True, target=target, path=picture_name)
+
+    print("-------------------------------------------------------------")
+    print("NORMAL TERMINATION")
+
+    restart = input("Would you like to run another calculation with the same parameters (y/n)? ")
+    if restart.upper() != "Y":
+        break
