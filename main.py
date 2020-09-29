@@ -127,6 +127,10 @@ Backend:
             contracted_name += "k"
         else:
             contracted_name += str(VQE_shots)
+        VQE_quantum_device = None
+        if input("    Do you want to import a noise model from IBMQ device (y/n)? ").upper() == "Y":
+            print("""     -> "ibmq_16_melbourne" is the only device implemented at the moment :)""")
+            VQE_quantum_device = 'ibmq_16_melbourne'
         break
     elif VQE_backend.upper() == "S":
         contracted_name += "S"
@@ -191,6 +195,8 @@ while True:
     start_time = time.time()
     vqe = bm.BIN_VQE(VQE_file, method=VQE_exp_val_method, verbose=True, depth=VQE_depth)
     vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
+    if VQE_quantum_device != None:
+        vqe.import_noise_model(VQE_quantum_device)
     iteration_file = folder + "/" + contracted_name + "_iteration.txt"
     real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
     print("Expectation value: {} + {}j".format(real, immaginary))
