@@ -44,6 +44,23 @@ contracted_name += str(VQE_depth)
 contracted_name += "_"
 
 while True:
+    VQE_exp_val_method = input('''
+Expectation value:
+    -> Criteria type:
+        D) Direct
+        G) Graph coloring sorted
+    Selection (default: D): ''')
+    if VQE_exp_val_method.upper() == "D" or VQE_exp_val_method == "":
+        VQE_exp_val_method = "direct"
+        break
+    elif VQE_exp_val_method.upper() == "G":
+        VQE_exp_val_method = "graph_coloring"
+        break
+    else:
+        print("ERROR: {} is not a valid entry".format(VQE_exp_val_method))
+        
+        
+while True:
     VQE_optimizer = input('''
 Optimizer:
     -> Optimizer type:
@@ -130,10 +147,11 @@ if input("    -> Do you want to accumulate converged value statistic (y/n)? ").u
     num_bins = input("         Select number of bins (default: 50): ")
     num_bins = 50 if num_bins == "" else int(num_bins)
 
-if input("    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
-    threads = 0
-else:
-    threads = 1
+if VQE_exp_val_method == "direct":
+    if input("    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
+        threads = 0
+    else:
+        threads = 1
 
 print("-------------------------------------------------------------\n")
 
@@ -156,9 +174,9 @@ simulator_options = {
     "max_parallel_shots": 1
     }
 start_time = time.time()
-vqe = bm.BIN_VQE(VQE_file, verbose=True, depth=VQE_depth)
-iteration_file = folder + "/" + contracted_name + "_iteration.txt"
+vqe = bm.BIN_VQE(VQE_file, method=VQE_exp_val_method, verbose=True, depth=VQE_depth)
 vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
+iteration_file = folder + "/" + contracted_name + "_iteration.txt"
 real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
