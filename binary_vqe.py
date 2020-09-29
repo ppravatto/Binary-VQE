@@ -126,6 +126,7 @@ class BIN_VQE():
         self.shots = 1024
         self.simulator_options = {"method": "automatic"}
         self.noise_model_flag = False
+        self.error_mitigation_flag = False
         if verbose==True:
             print("VQE CLASS INITIALIZATION:")
             print(" -> Total number of basis functions: {}".format(self.M))
@@ -210,9 +211,10 @@ class BIN_VQE():
         if simulator_options != None:
             self.simulator_options = simulator_options
         
-    def import_noise_model(self, quantum_device):
+    def import_noise_model(self, quantum_device, error_mitigation=True):
         if self.backend_name == "qasm_simulator":
             self.noise_model_flag == True
+            self.error_mitigation_flag == error_mitigation
             provider = IBMQ.load_account()
             device = provider.get_backend(quantum_device)
             self.device_properties = device.properties()
@@ -274,7 +276,8 @@ class BIN_VQE():
                 job = execute(circuit_buffer, self.backend, shots=self.shots, backend_options=self.simulator_options)
                 results = job.result()
             else:
-                q_instance = QuantumInstance(self.backend, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=CompleteMeasFitter)
+                error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
+                q_instance = QuantumInstance(self.backend, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
                 results = q_instance.execute(circuit_buffer)
             counts = results.get_counts()
             for index, post_rotation in enumerate(self.post_rot):

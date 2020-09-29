@@ -128,9 +128,26 @@ Backend:
         else:
             contracted_name += str(VQE_shots)
         VQE_quantum_device = None
+        VQE_error_mitigation = False
         if input("    Do you want to import a noise model from IBMQ device (y/n)? ").upper() == "Y":
-            print("""     -> "ibmq_16_melbourne" is the only device implemented at the moment :)""")
-            VQE_quantum_device = 'ibmq_16_melbourne'
+            IBMQ_device_file = open("IBMQ_devices", 'r')
+            IBMQ_device_list = IBMQ_device_file.readlines()
+            IBMQ_device_file.close()
+            for i, line in enumerate(IBMQ_device_list):
+                device_data = line.split()
+                print("""        {}) '{}' - ({} qubits)""".format(chr(65+i), device_data[0], device_data[1]))
+            VQE_quantum_device = input("    Selection (default: ibmq_16_melbourne): ").upper()
+            search_flag = False
+            for i, line in enumerate(IBMQ_device_list):
+                if VQE_quantum_device == chr(65+i):
+                    VQE_quantum_device = (line.split())[0]
+                    search_flag = True
+                    break
+            if search_flag == False:
+                VQE_quantum_device = 'ibmq_16_melbourne'
+            print("     -> Selected device: {}\n".format(VQE_quantum_device))
+            if  input("    Do you want to apply qiskit error mitigation algorithm (y/n)? ").upper() == "Y":
+                VQE_error_mitigation = True
         break
     elif VQE_backend.upper() == "S":
         contracted_name += "S"
@@ -196,7 +213,7 @@ while True:
     vqe = bm.BIN_VQE(VQE_file, method=VQE_exp_val_method, verbose=True, depth=VQE_depth)
     vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
     if VQE_quantum_device != None:
-        vqe.import_noise_model(VQE_quantum_device)
+        vqe.import_noise_model(VQE_quantum_device, error_mitigation=VQE_error_mitigation)
     iteration_file = folder + "/" + contracted_name + "_iteration.txt"
     real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename=iteration_file, verbose=True, optimizer_options=opt_options)
     print("Expectation value: {} + {}j".format(real, immaginary))
@@ -216,6 +233,9 @@ while True:
     else:
         report.write("\n")
     report.write("Backend: {}, Shots: {}\n\n".format(VQE_backend, VQE_shots))
+    if VQE_quantum_device != None:
+        error_mitigation_flag = "YES" if VQE_error_mitigation == True else "NO"
+        report.write("Noise model: {}, Error mitigation: {}".format(VQE_quantum_device, error_mitigation_flag))
     report.write("SYSTEM DATA:\n")
     report.write("Number of basis functions: {}, Qubits count: {}\n".format(vqe.M, vqe.N))
     report.write("Non-zero matrix elements: {} of {}, Threshold: {}\n".format(len(vqe.integrals[2]), vqe.M**2, VQE_threshold))
