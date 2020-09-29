@@ -37,20 +37,20 @@ VQE_depth = input("    -> Select the variational form depth (default: 1): ")
 VQE_depth = 1 if VQE_depth == "" else int(VQE_depth)
 
 while True:
-    Expectation_value = input('''
+    VQE_exp_val_method = input('''
 Expectation value:
     -> Criteria type:
         D) Direct
         G) Graph coloring sorted
     Selection: ''')
-    if Expectation_value.upper() == "D":
-        Expectation_value = "Direct"
+    if VQE_exp_val_method.upper() == "D":
+        VQE_exp_val_method = "direct"
         break
-    elif Expectation_value.upper() == "G":
-        Expectation_value = "Graph_coloring"
+    elif VQE_exp_val_method.upper() == "G":
+        VQE_exp_val_method = "graph_coloring"
         break
     else:
-        print("ERROR: {} is not a valid entry".format(Expectation_value))
+        print("ERROR: {} is not a valid entry".format(VQE_exp_val_method))
         
         
 while True:
@@ -149,9 +149,9 @@ simulator_options = {
     "max_parallel_shots": 1
     }
 start_time = time.time()
-vqe = bm.BIN_VQE(VQE_file, Expectation_value, verbose=True, depth=VQE_depth)
+vqe = bm.BIN_VQE(VQE_file, method=VQE_exp_val_method, verbose=True, depth=VQE_depth)
 vqe.configure_backend(VQE_backend, num_shots=VQE_shots, simulator_options=simulator_options)
-real, immaginary = vqe.run(expectation_value = Expectation_value, method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True, optimizer_options=opt_options)
+real, immaginary = vqe.run(method=VQE_optimizer, max_iter=VQE_max_iter, tol=VQE_tol, filename="Iteration.txt", verbose=True, optimizer_options=opt_options)
 print("Expectation value: {} + {}j".format(real, immaginary))
 print("-------------------------------------------------------------")
 print("OPTIMIZATION TERMINATED - Runtime: {}s".format(time.time() - start_time))
@@ -161,7 +161,7 @@ myplt.plot_convergence("Iteration.txt", target)
 
 if statistic_flag == True:
     #Collect sampling noise using current parameters
-    stats = vqe.get_expectation_statistic(Expectation_value, sample=num_samples, filename="Noise.txt", verbose=True)
+    stats = vqe.get_expectation_statistic(sample=num_samples, filename="Noise.txt", verbose=True)
     print("Mean value:")
     print(stats['mean'].real)
     print(stats['mean'].imag)

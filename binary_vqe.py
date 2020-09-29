@@ -9,7 +9,7 @@ from qiskit.quantum_info.operators.pauli import Pauli
 from qiskit.quantum_info.operators import Operator
 from qiskit import Aer
 from qiskit.aqua import QuantumInstance
-from qiskit.aqua.operators import PauliExpectation, CircuitSampler, StateFn, CircuitStateFn
+from qiskit.aqua.operators import PauliExpectation, AerPauliExpectation, CircuitSampler, StateFn, CircuitStateFn, WeightedPauliOperator
 
 I = complex(0, 1)
 
@@ -57,13 +57,13 @@ def convert_pauli_string_to_aqua_op(pauli_string):
     return pauli_operator
     
     
-def build_hamiltonian_with_aqua(op, coeff, pauli_string):
-    op += coeff*convert_pauli_string_to_aqua_op(pauli_string).to_operator()
-
+def build_hamiltonian_with_aqua(coeff, pauli_string):
+    return coeff*convert_pauli_string_to_aqua_op(pauli_string).to_operator()
 
 class BIN_VQE():
 
-    def __init__(self, filename, expectation_value, verbose=False, entanglement="full", depth=1, threshold=0):
+    def __init__(self, filename, method="graph_coloring", verbose=False, entanglement="full", depth=1, threshold=0):
+        self.expect_method = method
         self.expectation_value = None
         self.expectation_statistic = None
         self.n_iter = 0
@@ -85,6 +85,7 @@ class BIN_VQE():
                 myline = line.split()
                 if row==0:
                     self.M = len(myline)
+                    self.N = int(np.ceil(np.log2(self.M)))
                 for col, element in enumerate(myline):
                     if np.abs(float(element)) > self.threshold:
                         self.integrals[0].append(int(row))
@@ -94,11 +95,16 @@ class BIN_VQE():
         else:
             print("ERROR: datafile not found\n")
             exit()
-        self.N = int(np.ceil(np.log2(self.M)))
         self.qubits = range(self.N)
         self.num_params = 2*(1+self.depth)*self.N
-        self.hamiltonian = Operator(np.zeros((2**(self.N), 2**(self.N))), (2**(self.N-1),2), (2,2**(self.N-1)))
         self.post_rot = []
+        if self.expect_method == "graph_coloring":
+            self.pauli_list = []
+            self.pauli_coeff_list = []
+        elif self.expect_method == "direct":
+            pass
+        else:
+            print("ERROR: {} is not a expectation value calculation method".format(self.expect_method))
         for i, row in enumerate(self.integrals[0]):
             col = self.integrals[1][i]
             row_bin = get_bin_list(row, self.N)
@@ -106,11 +112,16 @@ class BIN_VQE():
             for term in range(2**self.N):
                 term_bin = get_bin_list(term, self.N)
                 pauli_string, coeff = get_pauli_string(row_bin, col_bin, term_bin)
-                build_hamiltonian_with_aqua(self.hamiltonian, coeff, pauli_string)
-                search_string = get_post_rotation(pauli_string)
-                if self.post_rot.count(search_string) == 0:
-                    self.post_rot.append(search_string)
-        self.hamiltonian.data = np.multiply(self.hamiltonian.data, self.integrals[2])  ### N.B. Qua al posto di self.integrals[2] c'è bisogno di tutti gli integrali (anche i non nulli)
+                if self.expect_method == "graph_coloring":
+                    self.pauli_coeff_list.append(coeff*self.integrals[2][i])
+                    self.pauli_list.append(convert_pauli_string_to_aqua_op(pauli_string))
+                else:
+                    search_string = get_post_rotation(pauli_string)
+                    if self.post_rot.count(search_string) == 0:
+                        self.post_rot.append(search_string)
+        if self.expect_method == "graph_coloring":
+            hamiltonian = WeightedPauliOperator.from_list(self.pauli_list, self.pauli_coeff_list)
+            self.hamiltonian = hamiltonian.to_opflow()
         self.backend_name = 'qasm_simulator'
         self.backend = Aer.get_backend('qasm_simulator')
         self.shots = 1024
@@ -121,7 +132,8 @@ class BIN_VQE():
             print(" ---> Required number of Qubits: {}".format(self.N))
             print(" -> Non-zero matrix elements: {} of {}".format(len(self.integrals[2]), self.M**2))
             print(" ---> Matrix element threshold: {}".format(self.threshold))
-            print(" -> Total number of post rotations: {} of {}".format(len(self.post_rot), 3**self.N))
+            if self.expect_method == "direct":
+                print(" -> Total number of post rotations: {} of {}".format(len(self.post_rot), 3**self.N))
             print(" -> Total number of variational prameters: {}".format(self.num_params))
             print("")
     
@@ -131,8 +143,11 @@ class BIN_VQE():
             exit()
         self.state = state
     
-    def initialize_circuit(self):
-        qc = QuantumCircuit(self.N, self.N)
+    def initialize_circuit(self, classical_register=True):
+        if classical_register == True:
+            qc = QuantumCircuit(self.N, self.N)
+        else:
+            qc = QuantumCircuit(self.N)
         if self.state != 0:
             state_bin = get_bin_list(self.state, self.N)
             for qubit, state in enumerate(state_bin):
@@ -221,14 +236,13 @@ class BIN_VQE():
             exit()
         return counts
     
-    def get_circuit_no_measurement(self, parameters):
-        qc = self.initialize_circuit()
+    def get_variational_circuit(self, parameters, classical_register=True):
+        qc = self.initialize_circuit(classical_register=classical_register)
         qc += self.ryrz(parameters)
         return qc
     
     def get_circuit(self, post_rotation, parameters):
-        qc = self.initialize_circuit()
-        qc += self.ryrz(parameters)
+        qc = self.get_variational_circuit(parameters)
         if self.backend_name == 'qasm_simulator':
             qc += self.measure(post_rotation, measure=True)
         elif self.backend_name == 'statevector_simulator':
@@ -286,32 +300,37 @@ class BIN_VQE():
         return value/self.shots
             
     def compute_expectation_value(self, parameters):
-        value = 0
-        post_rotation_data = self.get_post_rotation_data(parameters)
-        for i, row in enumerate(self.integrals[0]):
-            col = self.integrals[1][i]
-            row_bin = get_bin_list(row, self.N)
-            col_bin = get_bin_list(col, self.N)
-            partial_sum = 0
-            for term in range(2**self.N):
-                term_bin = get_bin_list(term, self.N)
-                pauli_string, coeff = get_pauli_string(row_bin, col_bin, term_bin)
-                post_rotation = get_post_rotation(pauli_string)
-                counts = post_rotation_data[post_rotation]
-                partial_sum += coeff*self.compute_pauli_expect_val(pauli_string, counts)
-            value += partial_sum*self.integrals[2][i]
+        if self.expect_method == "direct":
+            value = 0
+            post_rotation_data = self.get_post_rotation_data(parameters)
+            for i, row in enumerate(self.integrals[0]):
+                col = self.integrals[1][i]
+                row_bin = get_bin_list(row, self.N)
+                col_bin = get_bin_list(col, self.N)
+                partial_sum = 0
+                for term in range(2**self.N):
+                    term_bin = get_bin_list(term, self.N)
+                    pauli_string, coeff = get_pauli_string(row_bin, col_bin, term_bin)
+                    post_rotation = get_post_rotation(pauli_string)
+                    counts = post_rotation_data[post_rotation]
+                    partial_sum += coeff*self.compute_pauli_expect_val(pauli_string, counts)
+                value += partial_sum*self.integrals[2][i]
+        elif self.expect_method == "graph_coloring":
+            qc = self.get_variational_circuit(parameters, classical_register=False)
+            psi = CircuitStateFn(qc)
+            q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
+            measurable_expression = StateFn(self.hamiltonian, is_measurement=True).compose(psi)
+            if self.backend_name == 'qasm_simulator':
+                expectation = PauliExpectation().convert(measurable_expression)
+            elif self.backend_name == 'statevector_simulator':
+                expectation = AerPauliExpectation().convert(measurable_expression)
+            else:
+                print("ERROR: {} is not a supported backend".format(self.backend_name))
+            sampler = CircuitSampler(q_instance).convert(expectation)
+            value = sampler.eval()
         return value
     
-    def compute_expectation_value_qiskit(self, params):
-        qc = self.get_circuit_no_measurement(params)
-        psi = CircuitStateFn(qc)
-        q_instance = QuantumInstance(self.backend, shots = self.shots, backend_options = self.simulator_options)
-        measurable_expression = StateFn(self.hamiltonian, is_measurement=True).compose(psi)
-        expectation = PauliExpectation().convert(measurable_expression)
-        sampler = CircuitSampler(q_instance).convert(expectation)
-        return sampler.eval().real
-    
-    def run(self, expectation_value, method='Nelder-Mead', inital_parameters=[], max_iter=1000, tol=1e-5, verbose=False, filename=None, optimizer_options={}):
+    def run(self, method='Nelder-Mead', inital_parameters=[], max_iter=1000, tol=1e-5, verbose=False, filename=None, optimizer_options={}):
         if inital_parameters==[]:
             self.parameters = [rnd.uniform(0, 2*np.pi) for i in range(self.num_params)]
         else:
@@ -323,24 +342,14 @@ class BIN_VQE():
             datafile = open(filename, 'w')
             
         def target_function(params):
-            if expectation_value == "Graph_coloring":
-                value = self.compute_expectation_value_qiskit(params)
-                self.opt_history.append(value)
-                self.n_iter += 1
-                if verbose==True:
-                    print("{0:4d}\t{1:3.6f}".format(self.n_iter, value))
-                if filename != None:
-                    datafile.write("{}\t{}\n".format(value, value))
-                return value
-            else:
-                value = self.compute_expectation_value(params)
-                self.opt_history.append(value.real)
-                self.n_iter += 1
-                if verbose==True:
-                    print("{0:4d}\t{1:3.6f}".format(self.n_iter, value.real))
-                if filename != None:
-                    datafile.write("{}\t{}\n".format(value.real, value.imag))
-                return value.real
+            self.n_iter += 1
+            value = self.compute_expectation_value(params)
+            self.opt_history.append(value.real)
+            if verbose==True:
+                print("{0:4d}\t{1:3.6f}".format(self.n_iter, value.real))
+            if filename != None:
+                datafile.write("{}\t{}\n".format(value.real, value.imag))
+            return value.real
 
         def get_opt_constraints():
             constraints = []
@@ -382,24 +391,18 @@ class BIN_VQE():
         else:
             print("OPTIMIZATION ENDED")
         self.parameters = opt_results.x if method != 'SPSA' else opt_results
-        if expectation_value == "Graph_coloring":
-            self.expectation_value = self.compute_expectation_value_qiskit(self.parameters)
-        else:
-            self.expectation_value = self.compute_expectation_value(self.parameters)
+        self.expectation_value = self.compute_expectation_value(self.parameters)
         if(filename != None):
             datafile.close()
         return self.expectation_value.real, self.expectation_value.imag
     
-    def get_expectation_statistic(self, expectation_value, sample=100, verbose=False, filename=None, ext_params=None):
+    def get_expectation_statistic(self, sample=100, verbose=False, filename=None, ext_params=None):
         self.expectation_statistic = {}
         self.expectation_statistic['sample'] = sample
         data = []
         parameters = ext_params if ext_params != None else self.parameters
         for n in range(sample):
-            if expectation_value == "Graph_coloring":
-                value = self.compute_expectation_value_qiskit(self.parameters)
-            else:
-                value = self.compute_expectation_value(self.parameters)
+            value = self.compute_expectation_value(self.parameters)
             if verbose==True:
                 print("{0:4d}\t{1:3.6f}\t{2:3.6f}".format(n, value.real, value.imag))
             data.append(value)
