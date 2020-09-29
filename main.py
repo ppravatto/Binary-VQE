@@ -54,9 +54,11 @@ Expectation value:
     Selection (default: D): ''')
     if VQE_exp_val_method.upper() == "D" or VQE_exp_val_method == "":
         VQE_exp_val_method = "direct"
+        contracted_name += "D"
         break
     elif VQE_exp_val_method.upper() == "G":
         VQE_exp_val_method = "graph_coloring"
+        contracted_name += "G"
         break
     else:
         print("ERROR: {} is not a valid entry".format(VQE_exp_val_method))
@@ -204,6 +206,7 @@ while True:
     report.write("Time: {}\n\n".format(start_date.strftime("%H:%M:%S")))
     report.write("VQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(VQE_entanglement, VQE_depth))
+    report.write("Expectation value computation method: {}".format(VQE_exp_val_method))
     report.write("Optimizer: {}, Max Iter: {}\n".format(VQE_optimizer, VQE_max_iter))
     if VQE_optimizer != "SPSA":
         report.write("Tol: {}\n".format(VQE_tol))
