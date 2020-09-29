@@ -55,10 +55,6 @@ def convert_pauli_string_to_aqua_op(pauli_string):
     pauli_string_list = [element for element in pauli_string]
     pauli_operator = Pauli(label = pauli_string_list)
     return pauli_operator
-    
-    
-def build_hamiltonian_with_aqua(coeff, pauli_string):
-    return coeff*convert_pauli_string_to_aqua_op(pauli_string).to_operator()
 
 class BIN_VQE():
 
