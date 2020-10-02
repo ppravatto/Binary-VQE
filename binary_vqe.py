@@ -336,7 +336,11 @@ class BIN_VQE():
         elif self.expect_method == "graph_coloring":
             qc = self.get_variational_circuit(parameters, classical_register=False)
             psi = CircuitStateFn(qc)
-            q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
+            if self.noise_model_flag == False:
+                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
+            else:
+                error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
+                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
             measurable_expression = StateFn(self.hamiltonian, is_measurement=True).compose(psi)
             if self.backend_name == 'qasm_simulator':
                 expectation = PauliExpectation().convert(measurable_expression)
