@@ -277,7 +277,7 @@ class BIN_VQE():
                 results = job.result()
             else:
                 error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
-                q_instance = QuantumInstance(self.backend, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
+                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
                 results = q_instance.execute(circuit_buffer)
             counts = results.get_counts()
             for index, post_rotation in enumerate(self.post_rot):
