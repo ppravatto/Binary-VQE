@@ -112,6 +112,7 @@ else:
     VQE_tol = 1e-6 if VQE_tol == "" else float(VQE_tol)
    
 VQE_shots = 1
+VQE_quantum_device = None
 while True:
     VQE_backend = input('''
 Backend:
@@ -129,7 +130,6 @@ Backend:
             contracted_name += "k"
         else:
             contracted_name += str(VQE_shots)
-        VQE_quantum_device = None
         VQE_error_mitigation = False
         if input("    Do you want to import a noise model from IBMQ device (y/n)? ").upper() == "Y":
             IBMQ_device_file = open("IBMQ_devices", 'r')

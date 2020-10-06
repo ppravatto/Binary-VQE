@@ -94,6 +94,9 @@ class BIN_VQE():
         else:
             print("ERROR: datafile not found\n")
             exit()
+        if self.M != 2**self.N:
+            print("ERROR: The basis set dimension must be a power of 2")
+            exit()
         self.qubits = range(self.N)
         self.num_params = 2*(1+self.depth)*self.N
         self.post_rot = []
