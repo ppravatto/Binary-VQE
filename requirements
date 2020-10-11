@@ -6,3 +6,4 @@ qiskit>=0.21
 scipy>=1.4.1
 seaborn>=0.10.1
 sympy>=1.6
+mpi4py>=3.0.3
