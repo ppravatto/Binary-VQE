@@ -26,7 +26,7 @@ python3 main.py
 ```
 In order to run multiple VQE calculations in order to collect statistical data the script `MPI_scan.py` must be used. In order to execute the script the library `mpi4py` must be installed. In order to run a calculation the following command can be used:
 ```
-mpiexec -n <number-of-task> python3 main.py
+mpiexec -n <number-of-task> python3 MPI_scan.py
 ```
 The `<number-of-task>` value must be equal to or less than the number of physical cores in the machine.
 
