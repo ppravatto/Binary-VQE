@@ -263,7 +263,7 @@ def save_report(config_data, real, imag):
         report.write("\n")
     report.write("Backend: {}, Shots: {}\n\n".format(config_data["VQE_backend"], config_data["VQE_shots"]))
     if config_data["VQE_quantum_device"] != None:
-        error_mitigation_flag = "YES" if VQE_error_mitigation == True else "NO"
+        error_mitigation_flag = "YES" if config_data["VQE_error_mitigation"] == True else "NO"
         report.write("Noise model: {}, Error mitigation: {}".format(config_data["VQE_quantum_device"], error_mitigation_flag))
     report.write("SYSTEM DATA:\n")
     report.write("Number of basis functions: {}, Qubits count: {}\n".format(config_data["M"], config_data["N"]))
