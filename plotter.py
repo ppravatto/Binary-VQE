@@ -7,7 +7,7 @@ plt.rc('text', usetex=True)
 def unitary_height_gaussian(x, c, w):
     return np.exp(-(x-c)**2/(2*w**2))
 
-def plot_convergence(filename, target=None, save_plot=True, path=None):
+def plot_convergence(filename, target=None, save_plot=True, path=None, show=True):
     myfile = open(filename, 'r')
     data = [[],[],[]]
     for index, line in enumerate(myfile):
@@ -28,9 +28,10 @@ def plot_convergence(filename, target=None, save_plot=True, path=None):
     if save_plot == True:
         fig_name = "convergence.png" if path == None else path
         plt.savefig(fig_name, dpi=600)
-    plt.show()
+    if show == True:
+        plt.show()
 
-def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None):
+def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
     myfile = open(filename, 'r')
     data = [[],[]]
     for index, line in enumerate(myfile):
@@ -61,5 +62,6 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
     if save_plot == True:
         fig_name = "sampling_noise.png" if path == None else path
         plt.savefig(fig_name, dpi=600)
-    plt.show()
+    if show == True:
+        plt.show()
 

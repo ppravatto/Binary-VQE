@@ -1,10 +1,20 @@
 import binary_vqe, user_interface
 import plotter as myplt
 import numpy as np
-import time, os
+import time, os, sys
 from datetime import datetime
 
-config_data = user_interface.get_user_input()
+config_data = None
+auto_flag = False
+if len(sys.argv)==1:
+    config_data = user_interface.get_user_input()
+else:
+    if os.path.isfile(sys.argv[1])==True:
+        config_data = user_interface.load_dictionary_from_file(sys.argv[1])
+        auto_flag = True
+    else:
+        print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
+        exit()
 
 while True:
 
@@ -47,11 +57,12 @@ while True:
     user_interface.save_report(config_data, real, immaginary)
 
     #Plot convergence trend
+    show_flag = True if auto_flag==False else False
     picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
-    myplt.plot_convergence(iteration_file, config_data["target"], path=picture_name)
+    myplt.plot_convergence(iteration_file, config_data["target"], path=picture_name, show=show_flag)
 
     aux_statistic_flag = "N"
-    if config_data["statistic_flag"] == True:
+    if config_data["statistic_flag"] == True and auto_flag == False:
         aux_statistic_flag = input("Would you like to skip the statistic accumulation for this run (y/n)? ")
     
     if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
@@ -67,11 +78,14 @@ while True:
 
         #Plot sampling noide graph with gaussian approximation
         picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_noise.png"
-        myplt.plot_vqe_statistic(statistic_file, bins=config_data["num_bins"], gauss=True, target=config_data["target"], path=picture_name)
+        myplt.plot_vqe_statistic(statistic_file, bins=config_data["num_bins"], gauss=True, target=config_data["target"], path=picture_name, show=show_flag)
 
     print("-------------------------------------------------------------")
     print("NORMAL TERMINATION")
 
-    restart = input("Would you like to run another calculation with the same parameters (y/n)? ")
-    if restart.upper() != "Y":
+    if auto_flag==False:
+        restart = input("Would you like to run another calculation with the same parameters (y/n)? ")
+        if restart.upper() != "Y":
+            break
+    else:
         break

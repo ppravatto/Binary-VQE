@@ -1,7 +1,7 @@
 import binary_vqe, user_interface
 import plotter as myplt
 import numpy as np
-import time, os
+import time, os, sys
 from datetime import datetime
 from mpi4py import MPI
 
@@ -10,8 +10,19 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 if rank == 0:
+    
     data_buffer = []
-    config_data = user_interface.get_user_input(VQE_statistic_flag=True)
+    config_data = None
+    auto_flag = False
+    if len(sys.argv)==1:
+        config_data = user_interface.get_user_input(VQE_statistic_flag=True)
+    else:
+        if os.path.isfile(sys.argv[1])==True:
+            config_data = user_interface.load_dictionary_from_file(sys.argv[1])
+            auto_flag = True
+        else:
+            print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
+            exit()
     workload = []
     extra_work = int(config_data["VQE_num_samples"]%size)
     norm_work = int((config_data["VQE_num_samples"] - extra_work)/size)
@@ -90,13 +101,15 @@ if rank==0:
 
     user_interface.save_report(config_data, real_avg, imag_avg)
 
+    show_flag = True if auto_flag==False else False
     picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_VQE_scan.png"
     myplt.plot_vqe_statistic(
         data_filename,
         bins=config_data["VQE_num_bins"],
         gauss=False,
         target=config_data["target"],
-        path=picture_name
+        path=picture_name,
+        show=show_flag
         )
 
     print("Average expectation value:")

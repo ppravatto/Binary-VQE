@@ -1,4 +1,4 @@
-import time, os
+import time, os, ast
 from datetime import datetime
 
 def get_user_input(VQE_statistic_flag=False):
@@ -175,7 +175,8 @@ def get_user_input(VQE_statistic_flag=False):
     folder = contracted_date + "_" + contracted_name
     os.mkdir(folder)
     config_data["base_folder"] = folder
-    config_data["start_date"] = start_date
+    config_data["date"] = start_date.strftime("%d/%m/%Y")
+    config_data["time"] = start_date.strftime("%H:%M:%S")
 
     print("\nOther options:")
     input_buffer = None
@@ -251,8 +252,8 @@ def get_user_input(VQE_statistic_flag=False):
 def save_report(config_data, real, imag):
     report_file = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_report.txt"
     report = open(report_file, 'w')
-    report.write("Date: {}\n".format(config_data["start_date"].strftime("%d/%m/%Y")))
-    report.write("Time: {}\n\n".format(config_data["start_date"].strftime("%H:%M:%S")))
+    report.write("Date: {}\n".format(config_data["date"]))
+    report.write("Time: {}\n\n".format(config_data["time"]))
     report.write("VQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(config_data["VQE_entanglement"], config_data["VQE_depth"]))
     report.write("Expectation value computation method: {}".format(config_data["VQE_exp_val_method"]))
@@ -280,3 +281,35 @@ def save_report(config_data, real, imag):
         report.write("Theoretical value: {}, Relative Error: {}\n".format(config_data["target"], rel_error))
     report.write("Runtime: {}s\n".format(config_data["runtime"]))
     report.close()
+
+def get_pruned_type(variable):
+    type_str = str(type(variable))
+    data = type_str.split(" ")
+    return data[1].strip(">").strip("'")
+
+def save_dictionary_to_file(dictionary, filename):
+    myfile = open(filename, 'w')
+    for key, value in dictionary.items():
+        myfile.write("{}\t{}\t{}\n".format(key, value, get_pruned_type(value)))
+    myfile.close()
+
+def load_dictionary_from_file(filename):
+    dictionary = {}
+    myfile = open(filename, 'r')
+    for line in myfile:
+        data = line.split('\t')
+        buffer = data[1].strip("'")
+        data[2] = data[2].strip('\n')
+        if data[2] == "bool":
+            buffer = True if buffer=="True" else False
+        elif data[2] == "int":
+            buffer = int(buffer)
+        elif data[2] == "float":
+            buffer = float(buffer)
+        elif data[2] == "dict":
+            buffer = ast.literal_eval(buffer)
+        elif data[2] == "NoneType":
+            buffer = None
+        dictionary[str(data[0])] = buffer
+    myfile.close()
+    return dictionary

@@ -387,7 +387,7 @@ class BIN_VQE():
                 constraints.append(u)
             return constraints
 
-        print("OPTIMIZATION STARTED", flash=True)
+        print("OPTIMIZATION STARTED", flush=True)
         if method == 'Nelder-Mead':
             options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
             opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
