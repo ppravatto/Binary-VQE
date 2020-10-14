@@ -61,7 +61,7 @@ def convert_pauli_string_to_aqua_op(pauli_string):
 
 class BIN_VQE():
 
-    def __init__(self, filename, method="graph_coloring", verbose=False, entanglement="full", depth=1, threshold=0):
+    def __init__(self, filename, method="graph_coloring", verbose=False, entanglement="full", depth=1, threshold=0, offset=None):
         self.expect_method = method
         self.expectation_value = None
         self.expectation_statistic = None
@@ -69,6 +69,7 @@ class BIN_VQE():
         self.opt_history = []
         self.state = 0
         self.entanglement = entanglement
+        self.offset_bias = offset if offset != None else 1e5
         if int(depth) <= 0:
             print("ERROR: the depth of the circuit cannot be {}".format(depth))
             exit()
@@ -99,6 +100,22 @@ class BIN_VQE():
             exit()
         self.qubits = range(self.N)
         self.num_params = 2*(1+self.depth)*self.N
+        if 2**self.N != self.M:
+            print("WARNING: The given number of basis functions ({}) will not fill the qubit register ({} capacity)".format(self.M, 2**self.N))
+            offset_flag = False
+            if offset == None:
+                offset_flag = input("         -> Would you like to apply an offset of {} to all not-used states (y/n)? ".format(self.offset_bias))
+                offset_flag = True if offset_flag.upper() == "Y" else False
+            else:
+                print("         -> An offset of {} will be applied to all not-used states".format(self.offset_bias))
+            if offset != None or offset_flag==True:
+                for i in range(2**self.N-self.M):
+                    self.integrals[0].append(self.M+i)
+                    self.integrals[1].append(self.M+i)
+                    self.integrals[2].append(self.offset_bias)
+            else:
+                print("ERROR: A VQE calculation cannot be performed with the current setting")
+                exit()
         self.post_rot = []
         if self.expect_method == "graph_coloring":
             self.pauli_list = []
