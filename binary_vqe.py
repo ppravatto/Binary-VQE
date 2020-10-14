@@ -401,7 +401,7 @@ class BIN_VQE():
                 constraints.append(u)
             return constraints
 
-        print("OPTIMIZATION STARTED")
+        print("OPTIMIZATION STARTED", flush=True)
         if method == 'Nelder-Mead':
             options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
             opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
@@ -426,9 +426,9 @@ class BIN_VQE():
         else:
             print("ERROR: {} is not a supported optimization method".format(method))
         if method != 'SPSA':
-            print("OPTIMIZATION: {}".format(opt_results.message))
+            print("OPTIMIZATION: {}".format(opt_results.message), flush=True)
         else:
-            print("OPTIMIZATION ENDED")
+            print("OPTIMIZATION ENDED", flush=True)
         self.parameters = opt_results.x if method != 'SPSA' else opt_results
         self.expectation_value = self.compute_expectation_value(self.parameters)
         if(filename != None):
