@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from distutils.spawn import find_executable
 
-plt.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'size':14})
-plt.rc('text', usetex=True)
+if find_executable('latex'):
+    plt.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'size':14})
+    plt.rc('text', usetex=True)
 
 def unitary_height_gaussian(x, c, w):
     return np.exp(-(x-c)**2/(2*w**2))
