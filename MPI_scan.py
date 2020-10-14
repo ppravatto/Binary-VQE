@@ -13,13 +13,11 @@ if rank == 0:
     
     data_buffer = []
     config_data = None
-    auto_flag = False
     if len(sys.argv)==1:
         config_data = user_interface.get_user_input(VQE_statistic_flag=True)
     else:
         if os.path.isfile(sys.argv[1])==True:
             config_data = user_interface.load_dictionary_from_file(sys.argv[1])
-            auto_flag = True
         else:
             print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
             exit()
@@ -40,11 +38,13 @@ config_data = comm.bcast(config_data, root=0)
 
 myload = (config_data["workload"])[rank]
 for VQE_stat_iter in range(myload):
+    offset = None if config_data["auto_flag"] == False else False
     vqe = binary_vqe.BIN_VQE(
         config_data["VQE_file"],
         method=config_data["VQE_exp_val_method"],
         verbose=False,
-        depth=config_data["VQE_depth"]
+        depth=config_data["VQE_depth"],
+        offset=offset
         )
     if VQE_stat_iter == 0 and rank == 0:
         config_data["N"] = vqe.N
@@ -101,7 +101,7 @@ if rank==0:
 
     user_interface.save_report(config_data, real_avg, imag_avg)
 
-    show_flag = True if auto_flag==False else False
+    show_flag = True if config_data["auto_flag"]==False else False
     picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_VQE_scan.png"
     myplt.plot_vqe_statistic(
         data_filename,

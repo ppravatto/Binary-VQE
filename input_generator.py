@@ -22,6 +22,7 @@ filename = input("Select input filename (default: input.txt): ")
 filename = "input.txt" if filename=="" else str(filename)
 
 config_data = user_interface.get_user_input(VQE_statistic_flag=input_type)
+config_data["auto_flag"]=True
 user_interface.save_dictionary_to_file(config_data, filename)
 
 print("-------------------------------------------------------------\n")

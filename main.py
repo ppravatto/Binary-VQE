@@ -5,25 +5,25 @@ import time, os, sys
 from datetime import datetime
 
 config_data = None
-auto_flag = False
 if len(sys.argv)==1:
     config_data = user_interface.get_user_input()
 else:
     if os.path.isfile(sys.argv[1])==True:
         config_data = user_interface.load_dictionary_from_file(sys.argv[1])
-        auto_flag = True
     else:
         print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
         exit()
 
 while True:
-
     start_time = time.time()
+    
+    offset = None if config_data["auto_flag"] == False else False
     vqe = binary_vqe.BIN_VQE(
         config_data["VQE_file"],
         method=config_data["VQE_exp_val_method"],
         verbose=True,
-        depth=config_data["VQE_depth"]
+        depth=config_data["VQE_depth"],
+        offset=offset
         )
     config_data["N"] = vqe.N
     config_data["M"] = vqe.M
@@ -57,12 +57,12 @@ while True:
     user_interface.save_report(config_data, real, immaginary)
 
     #Plot convergence trend
-    show_flag = True if auto_flag==False else False
+    show_flag = True if config_data["auto_flag"]==False else False
     picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
     myplt.plot_convergence(iteration_file, config_data["target"], path=picture_name, show=show_flag)
 
     aux_statistic_flag = "N"
-    if config_data["statistic_flag"] == True and auto_flag == False:
+    if config_data["statistic_flag"] == True and config_data["auto_flag"] == False:
         aux_statistic_flag = input("Would you like to skip the statistic accumulation for this run (y/n)? ")
     
     if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
@@ -83,7 +83,7 @@ while True:
     print("-------------------------------------------------------------")
     print("NORMAL TERMINATION")
 
-    if auto_flag==False:
+    if config_data["auto_flag"]==False:
         restart = input("Would you like to run another calculation with the same parameters (y/n)? ")
         if restart.upper() != "Y":
             break

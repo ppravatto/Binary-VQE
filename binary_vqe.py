@@ -103,6 +103,9 @@ class BIN_VQE():
             if offset == None:
                 offset_flag = input("         -> Would you like to apply an offset of {} to all not-used states (y/n)? ".format(self.offset_bias))
                 offset_flag = True if offset_flag.upper() == "Y" else False
+            elif offset == False:
+                print("ERROR: A VQE calculation cannot be performed with the current setting")
+                exit()
             else:
                 print("         -> An offset of {} will be applied to all not-used states".format(self.offset_bias))
             if offset != None or offset_flag==True:

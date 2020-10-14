@@ -247,6 +247,7 @@ def get_user_input(VQE_statistic_flag=False):
             }
     config_data["simulator_options"] = simulator_options
     print("-------------------------------------------------------------\n")
+    config_data["auto_flag"] = False
     return config_data
 
 def save_report(config_data, real, imag):
