@@ -10,7 +10,6 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 if rank == 0:
-    
     data_buffer = []
     config_data = None
     if len(sys.argv)==1:

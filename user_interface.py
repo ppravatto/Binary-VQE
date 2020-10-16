@@ -277,7 +277,7 @@ def save_report(config_data, real, imag):
     else:
         report.write("CALCULATION DATA:\n")
     report.write("Expectation value: Real part: {}, Imag part: {}\n".format(real, imag))
-    if config_data["target"] != None:
+    if config_data["target_file"] != None:
         rel_error = (real-config_data["target"])/config_data["target"]
         report.write("Theoretical value: {}, Relative Error: {}\n".format(config_data["target"], rel_error))
     report.write("Runtime: {}s\n".format(config_data["runtime"]))

@@ -18,7 +18,6 @@ def plot_convergence(filename, target=None, save_plot=True, path=None, show=True
         data[1].append(float(element[0]))
         data[2].append(float(element[1]))
     myfile.close()
-    fig = plt.figure()
     plt.plot(data[0], data[1], linewidth=1.5)
     if target != None:
         line = [target for i in data[0]]
@@ -40,7 +39,6 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         data[0].append(float((line.split())[0]))
         data[1].append(float((line.split())[1]))
     myfile.close()
-    fig = plt.figure()
     hist_data = plt.hist(data[0], bins=bins, orientation='horizontal')
     if gauss == True:
         mean = 0
