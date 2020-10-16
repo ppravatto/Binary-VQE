@@ -52,9 +52,6 @@ mpiexec -n <number-of-task> python3 MPI_scan.py <input_file>
 ```
 for a multiple VQE calculation. Keep in mind that the indirect mode will still save all the graphs and data but no interactive windows will be open.
 
-WARNING: The input file contains all the informations about date and time of the input creation and the location of the output folders. Do not run multiple calculations with the same input file or only the data from the last calculation will be saved.
-
-
 ## Currently supported optimizers
 - Nelder-mead
 - COBYLA

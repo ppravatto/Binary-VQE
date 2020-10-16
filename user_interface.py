@@ -1,9 +1,10 @@
 import time, os, ast
 from datetime import datetime
 
-def get_user_input(VQE_statistic_flag=False):
+def get_user_input(VQE_statistic_flag=False, auto_flag=False):
 
     config_data = {}
+    config_data["auto_flag"] = auto_flag
     os.system('cls' if os.name == 'nt' else 'clear')
 
     print('''-------------------------------------------------------------
@@ -12,7 +13,7 @@ def get_user_input(VQE_statistic_flag=False):
     ''')
     input_buffer = input("""Select the Hamiltonian matrix file (default: "VQE.txt"): """)
     input_buffer = "VQE.txt" if input_buffer == "" else input_buffer
-    if os.path.isfile(input_buffer)==False:
+    if auto_flag==False and os.path.isfile(input_buffer)==False:
         print("ERROR: {} datafile not found\n".format(input_buffer))
         exit()
     config_data["VQE_file"] = input_buffer
@@ -170,30 +171,23 @@ def get_user_input(VQE_statistic_flag=False):
     config_data["VQE_quantum_device"] = VQE_quantum_device
     config_data["contracted_name"] = contracted_name
 
-    start_date = datetime.now()
-    contracted_date = start_date.strftime("%d%m_%H%M%S")
-    folder = contracted_date + "_" + contracted_name
-    os.mkdir(folder)
-    config_data["base_folder"] = folder
-    config_data["date"] = start_date.strftime("%d/%m/%Y")
-    config_data["time"] = start_date.strftime("%H:%M:%S")
-
     print("\nOther options:")
     input_buffer = None
     if input("    -> Do you want to load a eigenvalue list file (y/n)? ").upper() == "Y":
         input_buffer = input("""         Select the file (default: "eigval_list.txt"): """)
         input_buffer = "eigval_list.txt" if input_buffer == "" else input_buffer
-        if os.path.isfile(input_buffer)==False:
-            print("ERROR: {} datafile not found\n".format(input_buffer))
-            exit()
     config_data["target_file"] = input_buffer
 
-    if config_data["target_file"] != None:
-        myfile = open(config_data["target_file"], 'r')
-        lines = myfile.readlines()
-        config_data["target"] = float((lines[1].split())[-1])
-        print("         -> Target value: {}\n".format(config_data["target"]))
-        myfile.close()
+    if config_data["target_file"] != None and auto_flag==False:
+        if os.path.isfile(input_buffer)==True:
+            myfile = open(config_data["target_file"], 'r')
+            lines = myfile.readlines()
+            config_data["target"] = float((lines[1].split())[-1])
+            print("         -> Target value: {}\n".format(config_data["target"]))
+            myfile.close()
+        else:
+            print("""ERROR: Target file "{}" not found""".format(config_data["target_file"]))
+            exit()
 
     statistic_flag = False
     if VQE_statistic_flag == True:
@@ -203,20 +197,15 @@ def get_user_input(VQE_statistic_flag=False):
         VQE_num_bins = 25 if VQE_num_bins == "" else int(VQE_num_bins)
         config_data["VQE_num_samples"] = VQE_num_samples
         config_data["VQE_num_bins"] = VQE_num_bins
-        iteration_folder = config_data["base_folder"] + "/iterations"
-        os.mkdir(iteration_folder)
-        config_data["iteration_folder"] = iteration_folder
-    else:
-        config_data["iteration_folder"] = config_data["base_folder"]
-        if VQE_backend != "statevector_simulator":
-            if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
-                statistic_flag = True
-                num_samples = input("         Select number of samples (default: 1000): ")
-                num_samples = 1000 if num_samples == "" else int(num_samples)
-                num_bins = input("         Select number of bins (default: 50): ")
-                num_bins = 50 if num_bins == "" else int(num_bins)
-                config_data["num_samples"] = num_samples
-                config_data["num_bins"] = num_bins
+    elif VQE_backend != "statevector_simulator":
+        if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
+            statistic_flag = True
+            num_samples = input("         Select number of samples (default: 1000): ")
+            num_samples = 1000 if num_samples == "" else int(num_samples)
+            num_bins = input("         Select number of bins (default: 50): ")
+            num_bins = 50 if num_bins == "" else int(num_bins)
+            config_data["num_samples"] = num_samples
+            config_data["num_bins"] = num_bins
     config_data["VQE_statistic_flag"] = VQE_statistic_flag  
     config_data["statistic_flag"] = statistic_flag
 
@@ -247,7 +236,31 @@ def get_user_input(VQE_statistic_flag=False):
             }
     config_data["simulator_options"] = simulator_options
     print("-------------------------------------------------------------\n")
-    config_data["auto_flag"] = False
+    return config_data
+
+def initialize_execution(config_data):
+    start_date = datetime.now()
+    contracted_date = start_date.strftime("%d%m_%H%M%S")
+    folder = contracted_date + "_" + config_data["contracted_name"]
+    os.mkdir(folder)
+    config_data["base_folder"] = folder
+    config_data["date"] = start_date.strftime("%d/%m/%Y")
+    config_data["time"] = start_date.strftime("%H:%M:%S")
+    if config_data["VQE_statistic_flag"] == True:
+        iteration_folder = config_data["base_folder"] + "/iterations"
+        os.mkdir(iteration_folder)
+        config_data["iteration_folder"] = iteration_folder
+    else:
+        config_data["iteration_folder"] = config_data["base_folder"]
+    if config_data["target_file"] != None and config_data["auto_flag"]==True:
+        if os.path.isfile(config_data["target_file"])==True:
+            myfile = open(config_data["target_file"], 'r')
+            lines = myfile.readlines()
+            config_data["target"] = float((lines[1].split())[-1])
+            myfile.close()
+        else:
+            print("""ERROR: Target file "{}" not found""".format(config_data["target_file"]))
+            exit()
     return config_data
 
 def save_report(config_data, real, imag):

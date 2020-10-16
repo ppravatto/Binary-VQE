@@ -20,6 +20,7 @@ if rank == 0:
         else:
             print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
             exit()
+    config_data = user_interface.initialize_execution(config_data)
     workload = []
     extra_work = int(config_data["VQE_num_samples"]%size)
     norm_work = int((config_data["VQE_num_samples"] - extra_work)/size)

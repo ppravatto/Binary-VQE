@@ -14,6 +14,8 @@ else:
         print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
         exit()
 
+config_data = user_interface.initialize_execution(config_data)
+
 while True:
     start_time = time.time()
     
