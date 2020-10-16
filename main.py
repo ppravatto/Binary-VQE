@@ -14,9 +14,10 @@ else:
         print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
         exit()
 
-config_data = user_interface.initialize_execution(config_data)
-
 while True:
+
+    config_data = user_interface.initialize_execution(config_data)
+
     start_time = time.time()
     
     offset = None if config_data["auto_flag"] == False else False
@@ -85,6 +86,8 @@ while True:
     print("-------------------------------------------------------------")
     print("NORMAL TERMINATION")
 
+    user_interface.finalize_execution(config_data)
+    
     if config_data["auto_flag"]==False:
         restart = input("Would you like to run another calculation with the same parameters (y/n)? ")
         if restart.upper() != "Y":

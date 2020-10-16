@@ -112,6 +112,8 @@ if rank==0:
         show=show_flag
         )
 
+    user_interface.finalize_execution(config_data)
+    
     print("Average expectation value:")
     print("Real part: {}".format(real_avg))
     print("Immaginary part: {}".format(imag_avg))

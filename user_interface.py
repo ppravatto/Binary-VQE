@@ -1,4 +1,4 @@
-import time, os, ast
+import time, os, ast, shutil
 from datetime import datetime
 
 def get_user_input(VQE_statistic_flag=False, auto_flag=False):
@@ -262,6 +262,13 @@ def initialize_execution(config_data):
             print("""ERROR: Target file "{}" not found""".format(config_data["target_file"]))
             exit()
     return config_data
+
+def finalize_execution(config_data):
+    VQE_copy_file = "./" + config_data["base_folder"] + "/" + config_data["VQE_file"]
+    shutil.copyfile(config_data["VQE_file"], VQE_copy_file)
+    if config_data["target_file"] != None:
+        target_copy_file = "./" + config_data["base_folder"] + "/" + config_data["target_file"]
+        shutil.copyfile(config_data["target_file"], target_copy_file)
 
 def save_report(config_data, real, imag):
     report_file = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_report.txt"
