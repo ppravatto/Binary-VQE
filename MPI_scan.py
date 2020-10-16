@@ -1,7 +1,7 @@
 import binary_vqe, user_interface
 import plotter as myplt
 import numpy as np
-import time, os, sys
+import time, os, sys, shutil
 from datetime import datetime
 from mpi4py import MPI
 
@@ -111,6 +111,15 @@ if rank==0:
         path=picture_name,
         show=show_flag
         )
+    
+    if config_data["temp_file"] == True:
+        temp_folder = ".VQE_temp"
+        if os.path.isdir(temp_folder):
+            shutil.rmtree(temp_folder)
+        os.mkdir(temp_folder)
+        user_interface.save_report(config_data, real_avg, imag_avg, path=temp_folder)
+        temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_VQE_scan.png"
+        shutil.copyfile(picture_name, temp_picture_name)
 
     user_interface.finalize_execution(config_data)
     

@@ -22,6 +22,11 @@ filename = input("Select input filename (default: input.txt): ")
 filename = "input.txt" if filename=="" else str(filename)
 
 config_data = user_interface.get_user_input(VQE_statistic_flag=input_type, auto_flag=True)
+
+print("Do you want to copy the temporary data to temporary folder (y/n)?")
+buffer = input("Selection (default: y): ")
+config_data["temp_file"] = True if buffer.upper() != "N" else False
+
 user_interface.save_dictionary_to_file(config_data, filename)
 
 print("-------------------------------------------------------------\n")

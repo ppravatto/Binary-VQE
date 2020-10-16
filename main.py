@@ -1,7 +1,7 @@
 import binary_vqe, user_interface
 import plotter as myplt
 import numpy as np
-import time, os, sys
+import time, os, sys, shutil
 from datetime import datetime
 
 config_data = None
@@ -61,8 +61,8 @@ while True:
 
     #Plot convergence trend
     show_flag = True if config_data["auto_flag"]==False else False
-    picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
-    myplt.plot_convergence(iteration_file, config_data["target"], path=picture_name, show=show_flag)
+    conv_picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
+    myplt.plot_convergence(iteration_file, config_data["target"], path=conv_picture_name, show=show_flag)
 
     aux_statistic_flag = "N"
     if config_data["statistic_flag"] == True and config_data["auto_flag"] == False:
@@ -80,13 +80,25 @@ while True:
         print(stats['std_dev'].imag)
 
         #Plot sampling noide graph with gaussian approximation
-        picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_noise.png"
-        myplt.plot_vqe_statistic(statistic_file, bins=config_data["num_bins"], gauss=True, target=config_data["target"], path=picture_name, show=show_flag)
+        noise_picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_noise.png"
+        myplt.plot_vqe_statistic(statistic_file, bins=config_data["num_bins"], gauss=True, target=config_data["target"], path=noise_picture_name, show=show_flag)
 
     print("-------------------------------------------------------------")
     print("NORMAL TERMINATION")
 
     user_interface.finalize_execution(config_data)
+    
+    if config_data["temp_file"] == True:
+        temp_folder = ".VQE_temp"
+        if os.path.isdir(temp_folder):
+            shutil.rmtree(temp_folder)
+        os.mkdir(temp_folder)
+        user_interface.save_report(config_data, real, immaginary, path=".VQE_temp")
+        temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_convergence.png"
+        shutil.copyfile(conv_picture_name, temp_picture_name)
+        if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
+            temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_noise.png"
+            shutil.copyfile(noise_picture_name, temp_picture_name)
     
     if config_data["auto_flag"]==False:
         restart = input("Would you like to run another calculation with the same parameters (y/n)? ")

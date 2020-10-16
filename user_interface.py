@@ -270,8 +270,9 @@ def finalize_execution(config_data):
         target_copy_file = "./" + config_data["base_folder"] + "/" + config_data["target_file"]
         shutil.copyfile(config_data["target_file"], target_copy_file)
 
-def save_report(config_data, real, imag):
-    report_file = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_report.txt"
+def save_report(config_data, real, imag, path=None):
+    folder = config_data["base_folder"] if path==None else path
+    report_file = folder + "/" + config_data["contracted_name"] + "_report.txt"
     report = open(report_file, 'w')
     report.write("Date: {}\n".format(config_data["date"]))
     report.write("Time: {}\n\n".format(config_data["time"]))
