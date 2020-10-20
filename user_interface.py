@@ -178,6 +178,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         input_buffer = "eigval_list.txt" if input_buffer == "" else input_buffer
     config_data["target_file"] = input_buffer
 
+    config_data["target"] = None
     if config_data["target_file"] != None and auto_flag==False:
         if os.path.isfile(input_buffer)==True:
             myfile = open(config_data["target_file"], 'r')
@@ -278,7 +279,7 @@ def save_report(config_data, real, imag, path=None):
     report.write("Time: {}\n\n".format(config_data["time"]))
     report.write("VQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(config_data["VQE_entanglement"], config_data["VQE_depth"]))
-    report.write("Expectation value computation method: {}".format(config_data["VQE_exp_val_method"]))
+    report.write("Expectation value computation method: {}\n".format(config_data["VQE_exp_val_method"]))
     report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))
     if config_data["VQE_optimizer"] != "SPSA":
         report.write("Tol: {}\n".format(config_data["VQE_tol"]))
@@ -287,7 +288,7 @@ def save_report(config_data, real, imag, path=None):
     report.write("Backend: {}, Shots: {}\n\n".format(config_data["VQE_backend"], config_data["VQE_shots"]))
     if config_data["VQE_quantum_device"] != None:
         error_mitigation_flag = "YES" if config_data["VQE_error_mitigation"] == True else "NO"
-        report.write("Noise model: {}, Error mitigation: {}".format(config_data["VQE_quantum_device"], error_mitigation_flag))
+        report.write("Noise model: {}, Error mitigation: {}\n".format(config_data["VQE_quantum_device"], error_mitigation_flag))
     report.write("SYSTEM DATA:\n")
     report.write("Number of basis functions: {}, Qubits count: {}\n".format(config_data["M"], config_data["N"]))
     report.write("Non-zero matrix elements: {} of {}, Threshold: {}\n".format(config_data["num_integrals"], config_data["M"]**2, config_data["VQE_threshold"]))

@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from distutils.spawn import find_executable
 
@@ -10,6 +11,8 @@ def unitary_height_gaussian(x, c, w):
     return np.exp(-(x-c)**2/(2*w**2))
 
 def plot_convergence(filename, target=None, save_plot=True, path=None, show=True):
+    if show == False:
+        matplotlib.use('Agg')
     myfile = open(filename, 'r')
     data = [[],[],[]]
     for index, line in enumerate(myfile):
@@ -33,6 +36,8 @@ def plot_convergence(filename, target=None, save_plot=True, path=None, show=True
         plt.show()
 
 def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
+    if show == False:
+        matplotlib.use('Agg')
     myfile = open(filename, 'r')
     data = [[],[]]
     for index, line in enumerate(myfile):
