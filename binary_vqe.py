@@ -65,6 +65,7 @@ class BIN_VQE():
         self.expect_method = method
         self.expectation_value = None
         self.expectation_statistic = None
+        self.online = None
         self.n_iter = 0
         self.opt_history = []
         self.state = 0
@@ -221,7 +222,8 @@ class BIN_VQE():
                 qc.measure(qubit, qubit)
         return qc
     
-    def configure_backend(self, backend_name='qasm_simulator', num_shots=1024, simulator_options=None):
+    def configure_backend(self, online_connection, backend_name='qasm_simulator', num_shots=1024, simulator_options=None):
+        self.online = online_connection
         self.backend = Aer.get_backend(backend_name)
         self.backend_name = backend_name
         if backend_name != 'statevector_simulator':
@@ -232,17 +234,28 @@ class BIN_VQE():
             self.simulator_options = simulator_options
         
     def import_noise_model(self, quantum_device, error_mitigation=True):
-        if self.backend_name == "qasm_simulator":
-            self.noise_model_flag == True
-            self.error_mitigation_flag == error_mitigation
-            provider = IBMQ.load_account()
-            device = provider.get_backend(quantum_device)
-            self.device_properties = device.properties()
-            self.coupling_map = device.configuration().coupling_map
-            self.noise_model = NoiseModel.from_backend(self.device_properties)
-        else:
-            print("WARNING: the noise model option is not available for {}".format(self.backend_name))
-
+        if self.online == True:
+            if self.backend_name == "qasm_simulator":
+                self.noise_model_flag == True
+                self.error_mitigation_flag == error_mitigation
+                provider = IBMQ.load_account()
+                device = provider.get_backend(quantum_device)
+                self.device_properties = device.properties()
+                self.coupling_map = device.configuration().coupling_map
+                self.noise_model = NoiseModel.from_backend(self.device_properties)
+            else:
+                print("WARNING: the noise model option is not available for {}".format(self.backend_name))
+        elif self.online == False:
+            if self.backend_name == "qasm_simulator":
+                if os.name == 'nt':
+                    noise_list = np.load(os.path.abspath(os.getcwd()) + "\\noise_models\\" + quantum_device + ".npy", allow_pickle = True)
+                elif os.name == "posix":
+                    noise_list = np.load(os.path.abspath(os.getcwd()) + "/noise_models/" + quantum_device + ".npy", allow_pickle = True)
+                self.noise_model = noise_list[0]
+                self.coupling_map = noise_list[1]
+                self.device_properties = noise_list[2]
+            else:
+                print("WARNING: the noise model option is not available for {}".format(self.backend_name))
     #Old function to run a single post rotation circuit (not used in VQE run)
     def run_circuit(self, post_rotation, parameters):
         qc = self.initialize_circuit()

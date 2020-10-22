@@ -158,6 +158,10 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
                 if  input("    Do you want to apply qiskit error mitigation algorithm (y/n)? ").upper() == "Y":
                     VQE_error_mitigation = True
                 config_data["VQE_error_mitigation"] = VQE_error_mitigation
+                if input("  Do you need to download the noise model from the IBM server (y/n)? ").upper() == "Y":
+                    config_data["online"] = True
+                else:
+                    config_data["online"] = False
             break
         elif VQE_backend.upper() == "S":
             contracted_name += "S"

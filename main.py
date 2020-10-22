@@ -32,7 +32,7 @@ while True:
     config_data["M"] = vqe.M
     config_data["num_integrals"] = len(vqe.integrals[2])
     config_data["num_post_rot"] = len(vqe.post_rot)
-    vqe.configure_backend(
+    vqe.configure_backend(config_data["online"],
         config_data["VQE_backend"],
         num_shots=config_data["VQE_shots"],
         simulator_options=config_data["simulator_options"]
