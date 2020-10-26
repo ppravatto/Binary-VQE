@@ -311,7 +311,7 @@ class BIN_VQE():
                 results = q_instance.execute(circuit_buffer)
             counts = results.get_counts()
             for index, post_rotation in enumerate(self.post_rot):
-                post_rotation_data[post_rotation] = counts[ifndex]
+                post_rotation_data[post_rotation] = counts[index]
         elif self.backend_name == 'statevector_simulator':
             job = execute(circuit_buffer, self.backend, backend_options=self.simulator_options)
             job_results = job.result()

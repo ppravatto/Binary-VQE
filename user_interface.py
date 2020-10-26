@@ -166,7 +166,9 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
                     config_data["online"] = True
                 else:
                     config_data["online"] = False
+                    print("\n******************* DOWNLOAD STARTED *******************")
                     download_noise_models(interactive=True, target_device=VQE_quantum_device)
+                    print("******************* DOWNLOAD ENDED *******************")
                 if  input("\n    Do you want to apply qiskit error mitigation algorithm (y/n)? ").upper() == "Y":
                     VQE_error_mitigation = True
                 config_data["VQE_error_mitigation"] = VQE_error_mitigation
@@ -350,8 +352,7 @@ def load_dictionary_from_file(filename):
     return dictionary
 
 def download_noise_models(interactive=False, target_device=None):
-    provider = IBMQ.load_account()
-
+    
     load_flag = True
     noise_model_directory = "noise_models/"
     if os.path.isdir('noise_models')==True:
@@ -368,9 +369,10 @@ def download_noise_models(interactive=False, target_device=None):
         devices_to_be_loaded.append(data[0])
 
     if load_flag == True:
+        provider = IBMQ.load_account()
         for device in devices_to_be_loaded:
             computer_noise = []
-            print("Loading {} noise model".format(device))
+            print("    Loading {} noise model".format(device))
             try:
                 computer = provider.get_backend(device)
                 computer_properties = computer.properties()
@@ -383,7 +385,7 @@ def download_noise_models(interactive=False, target_device=None):
                 np.save(device, computer_noise, allow_pickle=True)
                 os.replace(device + ".npy", noise_model_directory + device + ".npy")
             except:
-                print("    WARNING: unable to download {} noise model".format(device))
+                print("        WARNING: unable to download {} noise model".format(device))
                 if target_device == device:
-                    print("    ERROR: The selected noise model is not available")
+                    print("        ERROR: The selected noise model is not available")
                     exit()
