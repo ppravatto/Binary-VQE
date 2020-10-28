@@ -62,6 +62,7 @@ for VQE_stat_iter in range(myload):
             error_mitigation=config_data["VQE_error_mitigation"],
             online=config_data["online"]
             )
+    vqe.set_q_instance()
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_rank" + str(rank) + "_" + str(VQE_stat_iter) +  "_iteration.txt"
     real, imag = vqe.run(
         method=config_data["VQE_optimizer"],

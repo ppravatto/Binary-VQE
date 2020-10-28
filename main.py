@@ -43,6 +43,7 @@ while True:
             error_mitigation=config_data["VQE_error_mitigation"],
             online=config_data["online"]
             )
+    vqe.set_q_instance()
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_iteration.txt"
     real, immaginary = vqe.run(
         method=config_data["VQE_optimizer"],

@@ -65,6 +65,7 @@ class BIN_VQE():
         self.expect_method = method
         self.expectation_value = None
         self.expectation_statistic = None
+        self.q_instance = None
         self.online = True
         self.n_iter = 0
         self.opt_history = []
@@ -252,6 +253,20 @@ class BIN_VQE():
         else:
             print("ERROR: the noise model option is not available for {}".format(self.backend_name))
             exit()
+        
+    def set_q_instance(self):
+        if self.noise_model_flag == True:
+            if self.error_mitigation_flag == True:
+                error_mitigation_algorithm = CompleteMeasFitter
+                self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm, cals_matrix_refresh_period=9999)
+            else:
+                self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map)
+        else:
+            self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
+                    
+    
+            
+        
     
     #Old function to run a single post rotation circuit (not used in VQE run)
     def run_circuit(self, post_rotation, parameters):
@@ -307,8 +322,8 @@ class BIN_VQE():
                 results = job.result()
             else:
                 error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
-                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
-                results = q_instance.execute(circuit_buffer)
+               # q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
+                results = self.q_instance.execute(circuit_buffer)
             counts = results.get_counts()
             for index, post_rotation in enumerate(self.post_rot):
                 post_rotation_data[post_rotation] = counts[index]
@@ -366,11 +381,11 @@ class BIN_VQE():
         elif self.expect_method == "graph_coloring":
             qc = self.get_variational_circuit(parameters, classical_register=False)
             psi = CircuitStateFn(qc)
-            if self.noise_model_flag == False:
-                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
-            else:
-                error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
-                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
+#            if self.noise_model_flag == False:
+#                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
+#            else:
+#                error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
+#                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
             measurable_expression = StateFn(self.hamiltonian, is_measurement=True).compose(psi)
             if self.backend_name == 'qasm_simulator':
                 expectation = PauliExpectation().convert(measurable_expression)
@@ -378,7 +393,7 @@ class BIN_VQE():
                 expectation = AerPauliExpectation().convert(measurable_expression)
             else:
                 print("ERROR: {} is not a supported backend".format(self.backend_name))
-            sampler = CircuitSampler(q_instance).convert(expectation)
+            sampler = CircuitSampler(self.q_instance).convert(expectation)
             value = sampler.eval()
         return value
     
