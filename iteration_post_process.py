@@ -29,9 +29,15 @@ def load_iteration_folder(path, average=10):
     data = [[],[]]
     for filename in os.listdir(path):
         if filename.endswith(".txt"):
-            real, imag = get_converged_value(path+"/"+filename, average)
-            data[0].append(real)
-            data[1].append(imag)
+            file_path = path + "/" +filename
+            print("Loading from path: {}".format(file_path))
+            try:
+                real, imag = get_converged_value(file_path, average)
+            except:
+                print(" -> ERROR: Unable to load file")
+            else:
+                data[0].append(real)
+                data[1].append(imag)
         else:
             print("Skipping: {}".format(filename))
     return data
@@ -61,21 +67,24 @@ if input("\nDo you want to load a eigenvalue list file (y/n)? ").upper() == "Y":
         myfile = open(target_file, 'r')
         lines = myfile.readlines()
         target = float((lines[1].split())[-1])
-        print("     -> Target value: {}\n".format(target))
+        print("     -> Target value: {}".format(target))
         myfile.close()
     else:
         print("""ERROR: Target file "{}" not found""".format(target_file))
         exit()
 
 if single==True:
-    path = input("Enter the path to the iteration filename:")
+    path = input("\nEnter the path to the iteration filename: ")
     if os.path.isfile(path)==False:
         print("ERROR: {} is not a valid filename".format(path))
         exit()
     real, imag = get_converged_value(path, average=average)
+    plotter.plot_convergence(path, target=target, save_plot=True, path="PostProc_Conv.png")
     print("CONVERGED VALUE:")
     print("Real part: ", real)
-    print("Imaginary part: ", imag)    
+    print("Imaginary part: ", imag)
+    if(target != None):
+        print("Relative error: {}".format((real-target)/target))
 else:
     n_bins = input("Select the nuber of bins (default: 50): ")
     n_bins = 50 if n_bins == "" else int(n_bins)
