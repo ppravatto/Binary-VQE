@@ -254,20 +254,21 @@ class BIN_VQE():
             print("ERROR: the noise model option is not available for {}".format(self.backend_name))
             exit()
         
-    def set_q_instance(self):
+    def set_q_instance(self, calib_mat_refresh=9999):
         if self.noise_model_flag == True:
-            if self.error_mitigation_flag == True:
-                error_mitigation_algorithm = CompleteMeasFitter
-                self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm, cals_matrix_refresh_period=9999)
-            else:
-                self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map)
+            error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
+            self.q_instance = QuantumInstance(
+                self.backend,
+                shots=self.shots,
+                backend_options=self.simulator_options,
+                noise_model=self.noise_model,
+                coupling_map=self.coupling_map,
+                measurement_error_mitigation_cls=error_mitigation_algorithm,
+                cals_matrix_refresh_period=calib_mat_refresh
+                )
         else:
             self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
                     
-    
-            
-        
-    
     #Old function to run a single post rotation circuit (not used in VQE run)
     def run_circuit(self, post_rotation, parameters):
         qc = self.initialize_circuit()
@@ -321,8 +322,6 @@ class BIN_VQE():
                 job = execute(circuit_buffer, self.backend, shots=self.shots, backend_options=self.simulator_options)
                 results = job.result()
             else:
-                error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
-               # q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
                 results = self.q_instance.execute(circuit_buffer)
             counts = results.get_counts()
             for index, post_rotation in enumerate(self.post_rot):
@@ -381,11 +380,6 @@ class BIN_VQE():
         elif self.expect_method == "graph_coloring":
             qc = self.get_variational_circuit(parameters, classical_register=False)
             psi = CircuitStateFn(qc)
-#            if self.noise_model_flag == False:
-#                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
-#            else:
-#                error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
-#                q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options, noise_model=self.noise_model, coupling_map=self.coupling_map, measurement_error_mitigation_cls=error_mitigation_algorithm)
             measurable_expression = StateFn(self.hamiltonian, is_measurement=True).compose(psi)
             if self.backend_name == 'qasm_simulator':
                 expectation = PauliExpectation().convert(measurable_expression)
