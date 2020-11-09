@@ -24,6 +24,7 @@ while True:
     vqe = binary_vqe.BIN_VQE(
         config_data["VQE_file"],
         method=config_data["VQE_exp_val_method"],
+        entanglement=config_data["VQE_entanglement"],
         verbose=True,
         depth=config_data["VQE_depth"],
         offset=offset
