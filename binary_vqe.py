@@ -399,15 +399,23 @@ class BIN_VQE():
             self.parameters = inital_parameters
         if(filename != None):
             datafile = open(filename, 'w')
-            
-        def target_function(params):
+        
+        def save_iteration_data(value):
             self.n_iter += 1
-            value = self.compute_expectation_value(params)
             self.opt_history.append(value.real)
             if verbose==True:
                 print("{0:4d}\t{1:3.6f}".format(self.n_iter, value.real))
             if filename != None:
                 datafile.write("{}\t{}\n".format(value.real, value.imag))
+
+        def callback_function(params):
+            value = self.compute_expectation_value(params)
+            save_iteration_data(value)
+
+        def target_function(params):
+            value = self.compute_expectation_value(params)
+            if method == "SPSA" or method == "COBYLA":
+                save_iteration_data(value)
             return value.real
 
         def get_opt_constraints():
@@ -424,7 +432,7 @@ class BIN_VQE():
         print("OPTIMIZATION STARTED", flush=True)
         if method == 'Nelder-Mead':
             options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
-            opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead', options=options)
+            opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead',callback=callback_function , options=options)
         elif method == 'COBYLA':
             constr = get_opt_constraints()
             options = {'rhobeg':np.pi, 'tol':tol, 'disp':True, 'maxiter':max_iter, 'catol':1e-4}
@@ -432,7 +440,7 @@ class BIN_VQE():
         elif method == 'SLSQP':
             constr = get_opt_constraints()
             options = {'ftol':tol, 'disp':True, 'maxiter':max_iter}
-            opt_results = opt.minimize(target_function, self.parameters, method='SLSQP', constraints=constr, options=options)
+            opt_results = opt.minimize(target_function, self.parameters, method='SLSQP', constraints=constr, callback=callback_function, options=options)
         elif method == 'SPSA':
             default_spsa_c = [0.6283185307179586, 0.1, 0.602, 0.101, 0]
             _c = []
