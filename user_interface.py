@@ -1,5 +1,8 @@
 import time, os, ast, shutil
 from datetime import datetime
+import numpy as np
+from qiskit import IBMQ
+from qiskit.providers.aer.noise import NoiseModel
 
 def get_user_input(VQE_statistic_flag=False, auto_flag=False):
 
@@ -155,7 +158,18 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
                 if search_flag == False:
                     VQE_quantum_device = 'ibmq_16_melbourne'
                 print("     -> Selected device: {}\n".format(VQE_quantum_device))
-                if  input("    Do you want to apply qiskit error mitigation algorithm (y/n)? ").upper() == "Y":
+                buffer = input('''    Select when to download the noise models: 
+        N) Download the noise models now and store them
+        L) Download the noise models when the script starts
+    Selection (default: N): ''')
+                if buffer.upper() == "L":
+                    config_data["online"] = True
+                else:
+                    config_data["online"] = False
+                    print("\n******************* DOWNLOAD STARTED *******************")
+                    download_noise_models(interactive=True, target_device=VQE_quantum_device)
+                    print("******************* DOWNLOAD ENDED *******************")
+                if  input("\n    Do you want to apply qiskit error mitigation algorithm (y/n)? ").upper() == "Y":
                     VQE_error_mitigation = True
                 config_data["VQE_error_mitigation"] = VQE_error_mitigation
             break
@@ -199,7 +213,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         config_data["VQE_num_samples"] = VQE_num_samples
         config_data["VQE_num_bins"] = VQE_num_bins
     elif VQE_backend != "statevector_simulator":
-        if input("    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
+        if input("\n    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
             statistic_flag = True
             num_samples = input("         Select number of samples (default: 1000): ")
             num_samples = 1000 if num_samples == "" else int(num_samples)
@@ -220,7 +234,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         }
     else:
         if config_data["VQE_exp_val_method"] == "direct":
-            if input("    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
+            if input("\n    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
                 threads = 0
             else:
                 threads = 1
@@ -336,3 +350,42 @@ def load_dictionary_from_file(filename):
         dictionary[str(data[0])] = buffer
     myfile.close()
     return dictionary
+
+def download_noise_models(interactive=False, target_device=None):
+    
+    load_flag = True
+    noise_model_directory = "noise_models/"
+    if os.path.isdir('noise_models')==True:
+        if interactive==True:
+            buffer = input("Noise model folder found, do you want to replace it (y/n)? ")
+            if buffer.upper() != "Y":
+                load_flag = False
+    else:
+        os.mkdir('noise_models')
+
+    devices_to_be_loaded = []
+    for line in open("IBMQ_devices"):
+        data = line.split()
+        devices_to_be_loaded.append(data[0])
+
+    if load_flag == True:
+        provider = IBMQ.load_account()
+        for device in devices_to_be_loaded:
+            computer_noise = []
+            print("    Loading {} noise model".format(device))
+            try:
+                computer = provider.get_backend(device)
+                computer_properties = computer.properties()
+                coupling_map = computer.configuration().coupling_map
+                noise_model = NoiseModel.from_backend(computer_properties)
+                computer_noise.append(noise_model)
+                computer_noise.append(coupling_map)
+                computer_noise.append(computer_properties)
+                ### save noise models ####
+                np.save(device, computer_noise, allow_pickle=True)
+                os.replace(device + ".npy", noise_model_directory + device + ".npy")
+            except:
+                print("        WARNING: unable to download {} noise model".format(device))
+                if target_device == device:
+                    print("        ERROR: The selected noise model is not available")
+                    exit()

@@ -42,8 +42,10 @@ while True:
     if config_data["VQE_quantum_device"] != None:
         vqe.import_noise_model(
             config_data["VQE_quantum_device"],
-            error_mitigation=config_data["VQE_error_mitigation"]
+            error_mitigation=config_data["VQE_error_mitigation"],
+            online=config_data["online"]
             )
+    vqe.set_q_instance()
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_iteration.txt"
     real, immaginary = vqe.run(
         method=config_data["VQE_optimizer"],
@@ -90,21 +92,20 @@ while True:
 
     user_interface.finalize_execution(config_data)
     
-    if config_data["temp_file"] == True:
-        temp_folder = ".VQE_temp"
-        if os.path.isdir(temp_folder):
-            shutil.rmtree(temp_folder)
-        os.mkdir(temp_folder)
-        user_interface.save_report(config_data, real, immaginary, path=".VQE_temp")
-        temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_convergence.png"
-        shutil.copyfile(conv_picture_name, temp_picture_name)
-        if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
-            temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_noise.png"
-            shutil.copyfile(noise_picture_name, temp_picture_name)
-    
-    if config_data["auto_flag"]==False:
+    if config_data["auto_flag"] == True:
+        if config_data["temp_file"] == True:
+            temp_folder = ".VQE_temp"
+            if os.path.isdir(temp_folder):
+                shutil.rmtree(temp_folder)
+            os.mkdir(temp_folder)
+            user_interface.save_report(config_data, real, immaginary, path=".VQE_temp")
+            temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_convergence.png"
+            shutil.copyfile(conv_picture_name, temp_picture_name)
+            if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
+                temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_noise.png"
+                shutil.copyfile(noise_picture_name, temp_picture_name)
+        break
+    else:
         restart = input("Would you like to run another calculation with the same parameters (y/n)? ")
         if restart.upper() != "Y":
             break
-    else:
-        break

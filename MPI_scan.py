@@ -61,8 +61,10 @@ for VQE_stat_iter in range(myload):
     if config_data["VQE_quantum_device"] != None:
         vqe.import_noise_model(
             config_data["VQE_quantum_device"],
-            error_mitigation=config_data["VQE_error_mitigation"]
+            error_mitigation=config_data["VQE_error_mitigation"],
+            online=config_data["online"]
             )
+    vqe.set_q_instance()
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_rank" + str(rank) + "_" + str(VQE_stat_iter) +  "_iteration.txt"
     real, imag = vqe.run(
         method=config_data["VQE_optimizer"],
@@ -114,14 +116,15 @@ if rank==0:
         show=show_flag
         )
     
-    if config_data["temp_file"] == True:
-        temp_folder = ".VQE_temp"
-        if os.path.isdir(temp_folder):
-            shutil.rmtree(temp_folder)
-        os.mkdir(temp_folder)
-        user_interface.save_report(config_data, real_avg, imag_avg, path=temp_folder)
-        temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_VQE_scan.png"
-        shutil.copyfile(picture_name, temp_picture_name)
+    if config_data["auto_flag"] == True:
+        if config_data["temp_file"] == True:
+            temp_folder = ".VQE_temp"
+            if os.path.isdir(temp_folder):
+                shutil.rmtree(temp_folder)
+            os.mkdir(temp_folder)
+            user_interface.save_report(config_data, real_avg, imag_avg, path=temp_folder)
+            temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_VQE_scan.png"
+            shutil.copyfile(picture_name, temp_picture_name)
 
     user_interface.finalize_execution(config_data)
     
