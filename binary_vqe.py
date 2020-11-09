@@ -188,7 +188,6 @@ class BIN_VQE():
             qc.ry(param[qubit], qubit)
             qc.rz(param[qubit+self.N], qubit)
         for layer in range(1, self.depth+1):
-            qc.barrier()
             for control in range(self.N-1):
                 for target in range(control+1, self.N):
                     if (self.entanglement == "linear" and target > control+1):
@@ -196,11 +195,9 @@ class BIN_VQE():
                     qc.h(target)
                     qc.cx(control, target)
                     qc.h(target)
-            qc.barrier()
             for qubit in self.qubits:
                 qc.ry(param[qubit+2*layer*self.N], qubit)
                 qc.rz(param[qubit+(2*layer+1)*self.N], qubit)    
-            qc.barrier()  
         return qc
     
     def measure(self, post_rotation, measure=True):
@@ -216,8 +213,7 @@ class BIN_VQE():
                 qc.h(qubit)
             else:
                 pass
-        if post_rotation != "Z"*self.N:
-            qc.barrier()
+        qc.barrier()
         if measure == True:
             for qubit in self.qubits:
                 qc.measure(qubit, qubit)
@@ -264,7 +260,9 @@ class BIN_VQE():
                 noise_model=self.noise_model,
                 coupling_map=self.coupling_map,
                 measurement_error_mitigation_cls=error_mitigation_algorithm,
-                cals_matrix_refresh_period=calib_mat_refresh
+                cals_matrix_refresh_period=calib_mat_refresh,
+                optimization_level=3,
+                basis_gates=['u1', 'u2', 'u3', 'cx']
                 )
         else:
             self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)

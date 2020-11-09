@@ -42,6 +42,7 @@ for VQE_stat_iter in range(myload):
     vqe = binary_vqe.BIN_VQE(
         config_data["VQE_file"],
         method=config_data["VQE_exp_val_method"],
+        entanglement=config_data["VQE_entanglement"],
         verbose=False,
         depth=config_data["VQE_depth"],
         offset=offset
