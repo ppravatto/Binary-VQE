@@ -50,6 +50,18 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     input_buffer = 1 if input_buffer == "" else int(input_buffer)
     contracted_name += str(input_buffer) + "_"
     config_data["VQE_depth"] = input_buffer
+    config_data["RyRz_params"] = []
+    input_buffer = input("    -> Do you want to define a custom set of parameters (y/n)? ")
+    if input_buffer.upper() == "Y":
+        input_buffer = input("        -> Select the parameter file (default: RyRz_params.txt) ")
+        input_buffer = "RyRz_params.txt" if input_buffer == "" else input_buffer
+        if auto_flag==False and os.path.isfile(input_buffer)==False:
+            print("ERROR: {} RyRz parameter file not found\n".format(input_buffer))
+            exit()
+        param_file = open(input_buffer, 'r')
+        for line in param_file:
+            config_data["RyRz_params"].append(float(line))
+        param_file.close()
 
     while True:
         input_buffer = input('''
