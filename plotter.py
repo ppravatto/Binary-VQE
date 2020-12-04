@@ -40,7 +40,9 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         matplotlib.use('Agg')
     myfile = open(filename, 'r')
     data = [[],[]]
-    for index, line in enumerate(myfile):
+    for line in myfile:
+        if "#" in line:
+            continue
         data[0].append(float((line.split())[0]))
         data[1].append(float((line.split())[1]))
     myfile.close()
@@ -70,3 +72,7 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
     if show == True:
         plt.show()
 
+
+def plot_vqe_statistic_comparison(data):
+    plt.plot(data[0], data[1])
+    plt.show()
