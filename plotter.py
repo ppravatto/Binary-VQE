@@ -80,9 +80,9 @@ def plot_vqe_statistic_comparison(data, xlabel=None, ylabel=None, path=None, sav
         for value in mylist:
             x.append(data[0][i])
             y.append(value)
-        plt.scatter(x, y, alpha=0.1, c='#0054A8', edgecolor='none')
+        plt.scatter(x, y, alpha=0.02, c='#0072BD', edgecolor='none')
     if marker!=None:
-        plt.scatter(x, marker, marker="x", color='#FF0000')
+        plt.scatter(data[0], marker, marker="_", c='#E8971E', edgecolor='#E8971E')
     if xlabel != None:
         plt.xlabel(xlabel)
     if ylabel != None:

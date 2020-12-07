@@ -65,6 +65,7 @@ if input_buffer.upper() == "C":
     ylabel = input("Select y label: ")
     ylabel = None if ylabel == "" else ylabel
     print("-------------------------------------------------------------\n")
+    data_avg = []
     comparison_data = [[],[],[]]
     for filename in os.listdir(path):
         if filename.endswith(".txt") and filename.startswith("PostProc_Average_"):
@@ -82,11 +83,15 @@ if input_buffer.upper() == "C":
                         pass
                 else:
                     data_list.append(float(data[0]))
-            comparison_data[2].append(data_list)
             data_file.close()
+            avg = 0
+            for element in data_list:
+                avg += element/len(data_list)
+            data_avg.append(avg)
+            comparison_data[2].append(data_list)
         else:
             print("Skipping: {}".format(filename))
-    plotter.plot_vqe_statistic_comparison(comparison_data, xlabel=xlabel, ylabel=ylabel)
+    plotter.plot_vqe_statistic_comparison(comparison_data, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
 
 else:
     average = input("\nSelect the number of average points (default: 10): ")
