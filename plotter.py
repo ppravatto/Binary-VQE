@@ -73,6 +73,23 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         plt.show()
 
 
-def plot_vqe_statistic_comparison(data):
-    plt.plot(data[0], data[1])
+def plot_vqe_statistic_comparison(data, xlabel=None, ylabel=None, path=None, save=True, marker=None):
+    plt.plot(data[0], data[1], c='#AE0096')
+    for i, mylist in enumerate(data[2]):
+        x, y = [],[]
+        for value in mylist:
+            x.append(data[0][i])
+            y.append(value)
+        plt.scatter(x, y, alpha=0.1, c='#0054A8', edgecolor='none')
+    if marker!=None:
+        plt.scatter(x, marker, marker="x", color='#FF0000')
+    if xlabel != None:
+        plt.xlabel(xlabel)
+    if ylabel != None:
+        plt.ylabel(ylabel)
+    filename = "VQE_scan_comp.png"
+    if path!=None:
+        filename = path + "/" + filename
+    if save==True:
+        plt.savefig(filename, dpi=600)
     plt.show()

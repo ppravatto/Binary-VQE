@@ -49,18 +49,22 @@ print('''-------------------------------------------------------------
 -------------------------------------------------------------
     ''')
 
-input_buffer = input('''
-Select the operation to be performed:
+input_buffer = input('''Select the operation to be performed:
     A) Post-processing of a single VQE run
     B) Post-processing of a multiple VQE run
     C) Compare different multiple VQE scans
 Selection (default: B): ''')
 
 if input_buffer.upper() == "C":
-    path = input("Select post-processed data folder: ")
+    path = input("\nSelect post-processed data folder: ")
     if os.path.isdir(path)==False:
         print("ERROR: {} is not a valid path".format(path))
         exit()
+    xlabel = input("Select x label: ")
+    xlabel = None if xlabel == "" else xlabel
+    ylabel = input("Select y label: ")
+    ylabel = None if ylabel == "" else ylabel
+    print("-------------------------------------------------------------\n")
     comparison_data = [[],[],[]]
     for filename in os.listdir(path):
         if filename.endswith(".txt") and filename.startswith("PostProc_Average_"):
@@ -82,7 +86,7 @@ if input_buffer.upper() == "C":
             data_file.close()
         else:
             print("Skipping: {}".format(filename))
-    plotter.plot_vqe_statistic_comparison(comparison_data)
+    plotter.plot_vqe_statistic_comparison(comparison_data, xlabel=xlabel, ylabel=ylabel)
 
 else:
     average = input("\nSelect the number of average points (default: 10): ")
