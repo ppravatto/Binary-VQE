@@ -448,11 +448,12 @@ class BIN_VQE():
                 label = "c" + str(i)
                 _c.append(optimizer_options[label] if label in optimizer_options else default_spsa_c[i])
             print("-> SPSA optimizer coefficients:", _c)
-            optimizer = myopt.MySPSA(max_trials=max_iter, c0=_c[0], c1=_c[1], c2=_c[2], c3=_c[3], c4=_c[4])
+            optimizer = myopt.MySPSA(maxiter=max_iter, c0=_c[0], c1=_c[1], c2=_c[2], c3=_c[3], c4=_c[4])
             bounds = [(0, 2*np.pi) for i in range(self.num_params)]        
             opt_results, final_expectation, spsa_history = optimizer.optimize(self.num_params, target_function, variable_bounds=bounds, initial_point=self.parameters)
             for element in spsa_history:
                 callback_function(element)
+            callback_function(opt_results)
         else:
             print("ERROR: {} is not a supported optimization method".format(method))
         if method != 'SPSA':
