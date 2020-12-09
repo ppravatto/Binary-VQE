@@ -73,7 +73,15 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         plt.show()
 
 
-def plot_vqe_statistic_comparison(data, xlabel=None, ylabel=None, path=None, save=True, marker=None):
+def plot_vqe_statistic_comparison(input_data, xlabel=None, ylabel=None, path=None, save=True, marker=None):
+    data, _marker = [[],[],[]], []
+    sorted_order = [i for i in input_data[0]]
+    sorted_order.sort()
+    for order in sorted_order:
+        index = input_data[0].index(order)
+        _marker.append(marker[index])
+        for i in range(3):
+            data[i].append(input_data[i][index])
     plt.plot(data[0], data[1], c='#AE0096')
     for i, mylist in enumerate(data[2]):
         x, y = [],[]
@@ -81,8 +89,8 @@ def plot_vqe_statistic_comparison(data, xlabel=None, ylabel=None, path=None, sav
             x.append(data[0][i])
             y.append(value)
         plt.scatter(x, y, alpha=0.02, c='#0072BD', edgecolor='none')
-    if marker!=None:
-        plt.scatter(data[0], marker, marker="_", c='#E8971E', edgecolor='#E8971E')
+    if _marker!=None:
+        plt.scatter(data[0], _marker, marker="_", c='#E8971E', edgecolor='#E8971E')
     if xlabel != None:
         plt.xlabel(xlabel)
     if ylabel != None:

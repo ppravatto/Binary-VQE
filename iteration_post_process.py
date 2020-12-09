@@ -91,6 +91,10 @@ if input_buffer.upper() == "C":
             comparison_data[2].append(data_list)
         else:
             print("Skipping: {}".format(filename))
+    for element in comparison_data[0]:
+        if comparison_data[0].count(element) != 1:
+            print("ERROR: {} entries found for order element {}".format(comparison_data.count(element), element))
+            exit()
     plotter.plot_vqe_statistic_comparison(comparison_data, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
 
 else:
