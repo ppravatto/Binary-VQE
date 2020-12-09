@@ -305,6 +305,8 @@ def save_report(config_data, real, imag, path=None):
     report.write("Time: {}\n\n".format(config_data["time"]))
     report.write("VQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(config_data["VQE_entanglement"], config_data["VQE_depth"]))
+    if config_data["RyRz_params"] != []:
+        report.write("Adopted user defined RyRz parameters:\n{}\n".format(config_data["RyRz_params"]))
     report.write("Expectation value computation method: {}\n".format(config_data["VQE_exp_val_method"]))
     report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))
     if config_data["VQE_optimizer"] != "SPSA":
