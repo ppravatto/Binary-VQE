@@ -47,6 +47,11 @@ while True:
             )
     vqe.set_q_instance()
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_iteration.txt"
+    
+    RyRz_params = []
+    if config_data["RyRz_param_file"] != None:
+        RyRz_params = user_interface.load_array_for_file(config_data["RyRz_param_file"])
+        
     real, immaginary = vqe.run(
         method=config_data["VQE_optimizer"],
         max_iter=config_data["VQE_max_iter"],
@@ -54,7 +59,7 @@ while True:
         filename=iteration_file,
         verbose=True,
         optimizer_options=config_data["opt_options"],
-        inital_parameters=config_data["RyRz_params"]
+        inital_parameters=RyRz_params
         )
     print("Expectation value: {} + {}j".format(real, immaginary))
     print("-------------------------------------------------------------")

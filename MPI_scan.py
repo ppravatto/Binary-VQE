@@ -65,6 +65,11 @@ for VQE_stat_iter in range(myload):
             online=config_data["online"]
             )
     vqe.set_q_instance()
+    
+    RyRz_params = []
+    if config_data["RyRz_param_file"] != None:
+        RyRz_params = user_interface.load_array_for_file(config_data["RyRz_param_file"])
+    
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_rank" + str(rank) + "_" + str(VQE_stat_iter) +  "_iteration.txt"
     real, imag = vqe.run(
         method=config_data["VQE_optimizer"],
@@ -73,7 +78,7 @@ for VQE_stat_iter in range(myload):
         filename=iteration_file,
         verbose=False,
         optimizer_options=config_data["opt_options"],
-        inital_parameters=config_data["RyRz_params"]
+        inital_parameters=RyRz_params
         )
     local_data[0].append(real)
     local_data[1].append(imag)

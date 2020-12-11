@@ -50,7 +50,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     input_buffer = 1 if input_buffer == "" else int(input_buffer)
     contracted_name += str(input_buffer) + "_"
     config_data["VQE_depth"] = input_buffer
-    config_data["RyRz_params"] = []
+    config_data["RyRz_param_file"] = None
     input_buffer = input("    -> Do you want to define a custom set of parameters (y/n)? ")
     if input_buffer.upper() == "Y":
         input_buffer = input("        -> Select the parameter file (default: RyRz_params.txt) ")
@@ -58,11 +58,9 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         if auto_flag==False and os.path.isfile(input_buffer)==False:
             print("ERROR: {} RyRz parameter file not found\n".format(input_buffer))
             exit()
-        param_file = open(input_buffer, 'r')
-        for line in param_file:
-            config_data["RyRz_params"].append(float(line))
-        param_file.close()
-
+        else:
+            config_data["RyRz_param_file"] = input_buffer
+            
     while True:
         input_buffer = input('''
     Expectation value:
@@ -297,6 +295,15 @@ def finalize_execution(config_data):
         target_copy_file = "./" + config_data["base_folder"] + "/" + config_data["target_file"]
         shutil.copyfile(config_data["target_file"], target_copy_file)
 
+def load_array_for_file(filename, dtype=float):
+    if os.path.isfile(filename)==False:
+        print("ERROR: {} parameter file not found\n".format(filename))
+        exit()
+    myfile = open(filename, 'r')
+    data = [dtype(line) for line in myfile]
+    myfile.close()
+    return data
+
 def save_report(config_data, real, imag, path=None):
     folder = config_data["base_folder"] if path==None else path
     report_file = folder + "/" + config_data["contracted_name"] + "_report.txt"
@@ -305,8 +312,9 @@ def save_report(config_data, real, imag, path=None):
     report.write("Time: {}\n\n".format(config_data["time"]))
     report.write("VQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(config_data["VQE_entanglement"], config_data["VQE_depth"]))
-    if config_data["RyRz_params"] != []:
-        report.write("Adopted user defined RyRz parameters:\n{}\n".format(config_data["RyRz_params"]))
+    if config_data["RyRz_param_file"] != None:
+        RyRz_params = load_array_for_file(config_data["RyRz_param_file"])
+        report.write("Adopted user defined RyRz parameters:\n{}\n".format(RyRz_params))
     report.write("Expectation value computation method: {}\n".format(config_data["VQE_exp_val_method"]))
     report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))
     if config_data["VQE_optimizer"] != "SPSA":
