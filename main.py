@@ -53,7 +53,8 @@ while True:
         tol=config_data["VQE_tol"],
         filename=iteration_file,
         verbose=True,
-        optimizer_options=config_data["opt_options"]
+        optimizer_options=config_data["opt_options"],
+        inital_parameters=config_data["RyRz_params"]
         )
     print("Expectation value: {} + {}j".format(real, immaginary))
     print("-------------------------------------------------------------")

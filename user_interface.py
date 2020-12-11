@@ -50,6 +50,18 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     input_buffer = 1 if input_buffer == "" else int(input_buffer)
     contracted_name += str(input_buffer) + "_"
     config_data["VQE_depth"] = input_buffer
+    config_data["RyRz_params"] = []
+    input_buffer = input("    -> Do you want to define a custom set of parameters (y/n)? ")
+    if input_buffer.upper() == "Y":
+        input_buffer = input("        -> Select the parameter file (default: RyRz_params.txt) ")
+        input_buffer = "RyRz_params.txt" if input_buffer == "" else input_buffer
+        if auto_flag==False and os.path.isfile(input_buffer)==False:
+            print("ERROR: {} RyRz parameter file not found\n".format(input_buffer))
+            exit()
+        param_file = open(input_buffer, 'r')
+        for line in param_file:
+            config_data["RyRz_params"].append(float(line))
+        param_file.close()
 
     while True:
         input_buffer = input('''
@@ -293,6 +305,8 @@ def save_report(config_data, real, imag, path=None):
     report.write("Time: {}\n\n".format(config_data["time"]))
     report.write("VQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(config_data["VQE_entanglement"], config_data["VQE_depth"]))
+    if config_data["RyRz_params"] != []:
+        report.write("Adopted user defined RyRz parameters:\n{}\n".format(config_data["RyRz_params"]))
     report.write("Expectation value computation method: {}\n".format(config_data["VQE_exp_val_method"]))
     report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))
     if config_data["VQE_optimizer"] != "SPSA":

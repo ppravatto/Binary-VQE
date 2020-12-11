@@ -397,6 +397,9 @@ class BIN_VQE():
                 print("ERROR: {} parameters are insufficient for a {} qubits RyRz network of depth {}".format(len(inital_parameters), self.N, self.depth))
                 exit()
             self.parameters = inital_parameters
+        print("Initial parameters for the RyRz variational form:")
+        print(self.parameters)
+        print("")
         if(filename != None):
             datafile = open(filename, 'w')
         

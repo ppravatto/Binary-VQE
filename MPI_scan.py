@@ -72,7 +72,8 @@ for VQE_stat_iter in range(myload):
         tol=config_data["VQE_tol"],
         filename=iteration_file,
         verbose=False,
-        optimizer_options=config_data["opt_options"]
+        optimizer_options=config_data["opt_options"],
+        inital_parameters=config_data["RyRz_params"]
         )
     local_data[0].append(real)
     local_data[1].append(imag)
