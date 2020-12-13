@@ -104,6 +104,7 @@ if input_buffer.upper() == "C":
             print("ERROR: {} entries found for order element {}".format(comparison_data.count(element), element))
             exit()
     print("-------------------------------------------------------------\n")
+    sv_type = None
     sv_comparison_data = None
     if input("Do you want to load statevector files (y/n)? ").upper() == "Y":
         print("\nSTATEVECTOR DATASET LOADING")
@@ -142,6 +143,7 @@ Selection (default: B): ''')
         else:
             sv_type = "min"
     plotter.plot_vqe_statistic_comparison(comparison_data, statevector=sv_comparison_data, statevector_type=sv_type, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
+    plotter.plot_vqe_statistic_comparison(comparison_data, plot_type="shifted", statevector=sv_comparison_data, statevector_type=sv_type, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
 
 else:
     average = input("\nSelect the number of average points (default: 10): ")

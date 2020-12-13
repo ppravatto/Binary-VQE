@@ -73,25 +73,32 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         plt.show()
 
 
-def plot_vqe_statistic_comparison(input_data, statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):
-    data, _marker = [[],[],[]], []
-    if statevector != None:
-            sv_average, sv_min = [], []
+def plot_vqe_statistic_comparison(input_data, plot_type="normal", statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):
+    if plot_type!="normal" and plot_type!="shifted":
+        print("ERROR: plot type ({}) not found".format(plot_type))
+        exit()
+    data, _marker, sv_average, sv_min = [[],[],[]], [], [], []
     sorted_order = [i for i in input_data[0]]
     sorted_order.sort()
-    for order in sorted_order:
+    for order in sorted_order:                              
         index = input_data[0].index(order)
+        shift = input_data[1][index] if plot_type=="shifted" else 0
+        data[0].append(input_data[0][index])
+        data[1].append(input_data[1][index])
+        shifted_data = []
+        for element in input_data[2][index]:
+            shifted_data.append(element-shift)
+        data[2].append(shifted_data)
+        _marker.append(marker[index]-shift)
         if statevector != None:
-            sv_index = statevector[0].index(order)
             sv_avg = 0
+            sv_index = statevector[0].index(order)
             for element in statevector[2][sv_index]:
                 sv_avg += element/len(statevector[2][sv_index])
-            sv_average.append(sv_avg)
-            sv_min.append(min(statevector[2][sv_index]))
-        _marker.append(marker[index])
-        for i in range(3):
-            data[i].append(input_data[i][index])
-    plt.plot(data[0], data[1], c='#AE0096', label="Target value")
+            sv_average.append(sv_avg-shift)
+            sv_min.append(min(statevector[2][sv_index])-shift)
+    if plot_type=="normal":
+        plt.plot(data[0], data[1], c='#AE0096', label="Target value")
     if statevector != None:
         if statevector_type == "average" or statevector_type == "both":
             plt.plot(data[0], sv_average, label="Statevector avg", linestyle="--")
