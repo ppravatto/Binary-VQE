@@ -64,7 +64,7 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         plt.plot(y, x)
     if target != 0:
         plt.plot([0, max(hist_data[0])], [target, target], color='red', linestyle='--')
-    plt.xlabel("Number of sample")
+    plt.xlabel("Number of samples")
     plt.ylabel("Expectation value")
     if save_plot == True:
         fig_name = "sampling_noise.png" if path == None else path
@@ -73,16 +73,30 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         plt.show()
 
 
-def plot_vqe_statistic_comparison(input_data, xlabel=None, ylabel=None, path=None, save=True, marker=None):
+def plot_vqe_statistic_comparison(input_data, statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):
     data, _marker = [[],[],[]], []
+    if statevector != None:
+            sv_average, sv_min = [], []
     sorted_order = [i for i in input_data[0]]
     sorted_order.sort()
     for order in sorted_order:
         index = input_data[0].index(order)
+        if statevector != None:
+            sv_index = statevector[0].index(order)
+            sv_avg = 0
+            for element in statevector[2][sv_index]:
+                sv_avg += element/len(statevector[2][sv_index])
+            sv_average.append(sv_avg)
+            sv_min.append(min(statevector[2][sv_index]))
         _marker.append(marker[index])
         for i in range(3):
             data[i].append(input_data[i][index])
-    plt.plot(data[0], data[1], c='#AE0096')
+    plt.plot(data[0], data[1], c='#AE0096', label="Target value")
+    if statevector != None:
+        if statevector_type == "average" or statevector_type == "both":
+            plt.plot(data[0], sv_average, label="Statevector avg", linestyle="--")
+        if statevector_type == "min" or statevector_type == "both":
+            plt.plot(data[0], sv_min, label="Statevector min", linestyle="--")
     for i, mylist in enumerate(data[2]):
         x, y = [],[]
         for value in mylist:
@@ -95,6 +109,7 @@ def plot_vqe_statistic_comparison(input_data, xlabel=None, ylabel=None, path=Non
         plt.xlabel(xlabel)
     if ylabel != None:
         plt.ylabel(ylabel)
+    plt.legend()
     filename = "VQE_scan_comp.png"
     if path!=None:
         filename = path + "/" + filename

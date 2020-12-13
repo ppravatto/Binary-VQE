@@ -42,6 +42,36 @@ def load_iteration_folder(path, average=10):
             print("Skipping: {}".format(filename))
     return data
 
+def load_parsed_files(path, root_name=""):
+    data_avg = []
+    comparison_data = [[],[],[]]
+    for filename in os.listdir(path):
+        data_list, avg = [], 0
+        if filename.endswith(".txt") and filename.startswith(root_name):
+            print(" -> Loading: {}".format(filename))
+            filename = path + "/" + filename
+            data_file = open(filename)
+            for line in data_file:
+                data = line.split()
+                if "#" in line:
+                    if data[0] == "#ORDER":
+                        comparison_data[0].append(float(data[1]))
+                    elif data[0] == "#TARGET":
+                        comparison_data[1].append(float(data[1]))
+                    else:
+                        pass
+                else:
+                    data_list.append(float(data[0]))
+            data_file.close()
+            for element in data_list:
+                avg += element/len(data_list)
+            data_avg.append(avg)
+            comparison_data[2].append(data_list)
+        else:
+            print(" -> Skipping: {}".format(filename))
+    return comparison_data, data_avg
+
+
 os.system('cls' if os.name == 'nt' else 'clear')
 
 print('''-------------------------------------------------------------
@@ -56,46 +86,62 @@ input_buffer = input('''Select the operation to be performed:
 Selection (default: B): ''')
 
 if input_buffer.upper() == "C":
-    path = input("\nSelect post-processed data folder: ")
-    if os.path.isdir(path)==False:
-        print("ERROR: {} is not a valid path".format(path))
-        exit()
-    xlabel = input("Select x label: ")
+    xlabel = input("\nSelect x label: ")
     xlabel = None if xlabel == "" else xlabel
     ylabel = input("Select y label: ")
     ylabel = None if ylabel == "" else ylabel
     print("-------------------------------------------------------------\n")
-    data_avg = []
-    comparison_data = [[],[],[]]
-    for filename in os.listdir(path):
-        if filename.endswith(".txt") and filename.startswith("PostProc_Average_"):
-            print("Loading: {}".format(filename))
-            data_list = []
-            data_file = open(filename)
-            for line in data_file:
-                data = line.split()
-                if "#" in line:
-                    if data[0] == "#ORDER":
-                        comparison_data[0].append(float(data[1]))
-                    elif data[0] == "#TARGET":
-                        comparison_data[1].append(float(data[1]))
-                    else:
-                        pass
-                else:
-                    data_list.append(float(data[0]))
-            data_file.close()
-            avg = 0
-            for element in data_list:
-                avg += element/len(data_list)
-            data_avg.append(avg)
-            comparison_data[2].append(data_list)
-        else:
-            print("Skipping: {}".format(filename))
+    print("DATASET LOADING")
+    path = input("Select post-processed data folder: ")
+    if os.path.isdir(path)==False:
+        print("ERROR: {} is not a valid path".format(path))
+        exit()
+    dataset_name = input("Select the data filename root (default: PostProc_Average_): ")
+    dataset_name = dataset_name if dataset_name != "" else "PostProc_Average_"
+    comparison_data, data_avg = load_parsed_files(path, root_name=dataset_name)
     for element in comparison_data[0]:
         if comparison_data[0].count(element) != 1:
             print("ERROR: {} entries found for order element {}".format(comparison_data.count(element), element))
             exit()
-    plotter.plot_vqe_statistic_comparison(comparison_data, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
+    print("-------------------------------------------------------------\n")
+    sv_comparison_data = None
+    if input("Do you want to load statevector files (y/n)? ").upper() == "Y":
+        print("\nSTATEVECTOR DATASET LOADING")
+        path = input("Select post-processed data folder: ")
+        if os.path.isdir(path)==False:
+            print("ERROR: {} is not a valid path".format(path))
+            exit()
+        dataset_name = input("Select the data filename root (default: PostProc_Average_): ")
+        dataset_name = dataset_name if dataset_name != "" else "PostProc_Average_"
+        sv_comparison_data, _ = load_parsed_files(path, root_name=dataset_name)
+        for element in sv_comparison_data[0]:
+            if sv_comparison_data[0].count(element) != 1:
+                print("ERROR: {} entries found for order element {}".format(sv_comparison_data.count(element), element))
+                exit()
+        if len(sv_comparison_data[0]) != len(comparison_data[0]):
+            print("ERROR: {} statevector data loaded, {} are required".format(len(sv_comparison_data[0]),len(comparison_data[0])))
+            exit()
+        for element in sv_comparison_data[0]:
+            if comparison_data[0].count(element) != 1:
+                print("ERROR: statevector data entry {} does not match".format(element))
+                exit()
+        for element in comparison_data[0]:
+            if sv_comparison_data[0].count(element) != 1:
+                print("ERROR: data entry {} does not match with statevector".format(element))
+                exit()
+        print("-------------------------------------------------------------\n")
+        sv_type = input('''Select type of statevector data to be plotted:
+    A) Average
+    B) Min
+    C) Both
+Selection (default: B): ''')
+        if sv_type.upper() == "C":
+            sv_type = "both"
+        elif sv_type.upper() == "A":
+            sv_type = "average"
+        else:
+            sv_type = "min"
+    plotter.plot_vqe_statistic_comparison(comparison_data, statevector=sv_comparison_data, statevector_type=sv_type, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
 
 else:
     average = input("\nSelect the number of average points (default: 10): ")
