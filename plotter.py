@@ -73,54 +73,54 @@ def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=T
         plt.show()
 
 
-def plot_vqe_statistic_comparison(input_data, plot_type="normal", statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):
-    if plot_type!="normal" and plot_type!="shifted":
-        print("ERROR: plot type ({}) not found".format(plot_type))
-        exit()
-    data, _marker, sv_average, sv_min = [[],[],[]], [], [], []
-    sorted_order = [i for i in input_data[0]]
-    sorted_order.sort()
-    for order in sorted_order:                              
-        index = input_data[0].index(order)
-        shift = input_data[1][index] if plot_type=="shifted" else 0
-        data[0].append(input_data[0][index])
-        data[1].append(input_data[1][index])
-        shifted_data = []
-        for element in input_data[2][index]:
-            shifted_data.append(element-shift)
-        data[2].append(shifted_data)
-        _marker.append(marker[index]-shift)
-        if statevector != None:
-            sv_avg = 0
-            sv_index = statevector[0].index(order)
-            for element in statevector[2][sv_index]:
-                sv_avg += element/len(statevector[2][sv_index])
-            sv_average.append(sv_avg-shift)
-            sv_min.append(min(statevector[2][sv_index])-shift)
-    if plot_type=="normal":
-        plt.plot(data[0], data[1], c='#DA0000', label="Target value")
-    if statevector != None:
-        if statevector_type == "average" or statevector_type == "both":
-            plt.plot(data[0], sv_average, c='#FF9100', label="Statevector avg", linestyle="--")
-        if statevector_type == "min" or statevector_type == "both":
-            plt.plot(data[0], sv_min, c='#8000FF', label="Statevector min", linestyle="--")
-    for i, mylist in enumerate(data[2]):
-        x, y = [],[]
-        for value in mylist:
-            x.append(data[0][i])
-            y.append(value)
-        plt.scatter(x, y, alpha=0.025, c='#0072BD', edgecolor='none')
-    if _marker!=None:
-        plt.plot(data[0], _marker, linestyle=":", marker="_", c='#009900', label="Average")
-    if xlabel != None:
-        plt.xlabel(xlabel)
-    if ylabel != None:
-        plt.ylabel(ylabel)
-    plt.legend()
-    plt.grid(which="major", c="#EEEEEE", zorder=0)
-    filename = "VQE_scan_comp.png" if plot_type=="normal" else "VQE_scan_comp_shifted.png"
+def plot_vqe_statistic_comparison(input_data, statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12,6))
+    ax_list = {ax1: "normal", ax2: "shifted"}
+    for ax, plot_type in ax_list.items():
+        data, _marker, sv_average, sv_min = [[],[],[]], [], [], []
+        sorted_order = [i for i in input_data[0]]
+        sorted_order.sort()
+        for order in sorted_order:                              
+            index = input_data[0].index(order)
+            shift = input_data[1][index] if plot_type=="shifted" else 0
+            data[0].append(input_data[0][index])
+            data[1].append(input_data[1][index])
+            shifted_data = []
+            for element in input_data[2][index]:
+                shifted_data.append(element-shift)
+            data[2].append(shifted_data)
+            _marker.append(marker[index]-shift)
+            if statevector != None:
+                sv_avg = 0
+                sv_index = statevector[0].index(order)
+                for element in statevector[2][sv_index]:
+                    sv_avg += element/len(statevector[2][sv_index])
+                sv_average.append(sv_avg-shift)
+                sv_min.append(min(statevector[2][sv_index])-shift)
+        if plot_type=="normal":
+            ax.plot(data[0], data[1], c='#000000', label="Target value", zorder=2)
+        if statevector != None and plot_type=="shifted":
+            if statevector_type == "average" or statevector_type == "both":
+                ax.plot(data[0], sv_average, c='#00BD35', label="Statevector avg", linestyle=":", zorder=3)
+            if statevector_type == "min" or statevector_type == "both":
+                ax.plot(data[0], sv_min, c='#BD1413', label="Statevector min", linestyle="--", zorder=3)
+        alpha_plot = 0.025 if plot_type == "normal" else 0.08
+        for i, mylist in enumerate(data[2]):
+            x, y = [],[]
+            for value in mylist:
+                x.append(data[0][i])
+                y.append(value)
+            ax.scatter(x, y, alpha=alpha_plot, c='#0072BD', edgecolor='none', zorder=1)
+        if _marker!=None:
+            ax.plot(data[0], _marker, linestyle="--", marker="v", c='#E8971E', label="Average")
+        if xlabel != None:
+            ax.set_xlabel(xlabel)
+        if ylabel != None:
+            ax.set_ylabel(ylabel[plot_type])
+        ax.legend(loc=1)
+    plt.tight_layout()
     if path!=None:
-        filename = path + "/" + filename
+        filename = path + "/" + "VQE_scan_comp.png"
     if save==True:
-        plt.savefig(filename, dpi=600)
+        plt.savefig("VQE_scan_comp.png", dpi=600)
     plt.show()

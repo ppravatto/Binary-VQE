@@ -88,8 +88,11 @@ Selection (default: B): ''')
 if input_buffer.upper() == "C":
     xlabel = input("\nSelect x label: ")
     xlabel = None if xlabel == "" else xlabel
-    ylabel = input("Select y label: ")
+    ylabel = input("Select y label for normal graph: ")
     ylabel = None if ylabel == "" else ylabel
+    ylabel_shifted = input("Select y label for shifted graph: ")
+    ylabel_shifted = None if ylabel_shifted == "" else ylabel_shifted
+    ylabel ={"normal": ylabel, "shifted": ylabel_shifted}
     print("-------------------------------------------------------------\n")
     print("DATASET LOADING")
     path = input("Select post-processed data folder: ")
@@ -143,8 +146,7 @@ Selection (default: B): ''')
         else:
             sv_type = "min"
     plotter.plot_vqe_statistic_comparison(comparison_data, statevector=sv_comparison_data, statevector_type=sv_type, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
-    plotter.plot_vqe_statistic_comparison(comparison_data, plot_type="shifted", statevector=sv_comparison_data, statevector_type=sv_type, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
-
+    
 else:
     average = input("\nSelect the number of average points (default: 10): ")
     average = 10 if average == "" else int(average)
