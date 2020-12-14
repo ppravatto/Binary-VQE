@@ -475,7 +475,7 @@ class BIN_VQE():
         data = []
         parameters = ext_params if ext_params != None else self.parameters
         for n in range(sample):
-            value = self.compute_expectation_value(self.parameters)
+            value = self.compute_expectation_value(parameters)
             if verbose==True:
                 print("{0:4d}\t{1:3.6f}\t{2:3.6f}".format(n, value.real, value.imag))
             data.append(value)

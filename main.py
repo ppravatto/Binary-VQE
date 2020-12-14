@@ -51,37 +51,46 @@ while True:
     RyRz_params = []
     if config_data["RyRz_param_file"] != None:
         RyRz_params = user_interface.load_array_for_file(config_data["RyRz_param_file"])
-        
-    real, immaginary = vqe.run(
-        method=config_data["VQE_optimizer"],
-        max_iter=config_data["VQE_max_iter"],
-        tol=config_data["VQE_tol"],
-        filename=iteration_file,
-        verbose=True,
-        optimizer_options=config_data["opt_options"],
-        inital_parameters=RyRz_params
-        )
-    print("Expectation value: {} + {}j".format(real, immaginary))
-    print("-------------------------------------------------------------")
-    vqe_runtime = time.time() - start_time
-    print("OPTIMIZATION TERMINATED - Runtime: {}s".format(vqe_runtime))
-    config_data["runtime"] = vqe_runtime
-
-    user_interface.save_report(config_data, real, immaginary)
-
-    #Plot convergence trend
+    
     show_flag = True if config_data["auto_flag"]==False else False
-    conv_picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
-    myplt.plot_convergence(iteration_file, config_data["target"], path=conv_picture_name, show=show_flag)
+    
+    if config_data["VQE_opt_skip"] == False:
+        real, immaginary = vqe.run(
+            method=config_data["VQE_optimizer"],
+            max_iter=config_data["VQE_max_iter"],
+            tol=config_data["VQE_tol"],
+            filename=iteration_file,
+            verbose=True,
+            optimizer_options=config_data["opt_options"],
+            inital_parameters=RyRz_params
+            )
+        print("Expectation value: {} + {}j".format(real, immaginary))
+        print("-------------------------------------------------------------")
+        vqe_runtime = time.time() - start_time
+        print("OPTIMIZATION TERMINATED - Runtime: {}s".format(vqe_runtime))
+        config_data["runtime"] = vqe_runtime
+
+        user_interface.save_report(config_data, real, immaginary)
+        
+        optimized_parameters = vqe.parameters
+        opt_param_file = open(config_data["iteration_folder"] + "/" + "VQE_opt_params.txt", 'w')
+        for element in optimized_parameters:
+            opt_param_file.write("{}\n".format(element))
+        opt_param_file.close()
+
+        #Plot convergence trend
+        conv_picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
+        myplt.plot_convergence(iteration_file, config_data["target"], path=conv_picture_name, show=show_flag)
 
     aux_statistic_flag = "N"
-    if config_data["statistic_flag"] == True and config_data["auto_flag"] == False:
+    if config_data["statistic_flag"] == True and config_data["auto_flag"] == False and config_data["VQE_opt_skip"] == False:
         aux_statistic_flag = input("Would you like to skip the statistic accumulation for this run (y/n)? ")
     
     if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
         #Collect sampling noise using current parameters
         statistic_file = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_noise.txt"
-        stats = vqe.get_expectation_statistic(sample=config_data["num_samples"], filename=statistic_file, verbose=True)
+        ext_params = None if config_data["VQE_opt_skip"] == False else RyRz_params
+        stats = vqe.get_expectation_statistic(sample=config_data["num_samples"], filename=statistic_file, verbose=True, ext_params=ext_params)
         print("Mean value:")
         print(stats['mean'].real)
         print(stats['mean'].imag)
