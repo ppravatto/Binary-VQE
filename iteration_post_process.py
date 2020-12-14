@@ -156,12 +156,20 @@ elif input_buffer.upper() == "D":
     dataset_tail = dataset_tail if dataset_tail != "" else "_noise.txt"
     bins = input("Select number of bins (default: 50): ")
     bins = 50 if bins == "" else int(bins)
-    noise_plotter = plotter.Plot_VQE_stats(bins=bins)
+    noise_plotter = plotter.Plot_VQE_stats(bins=bins, alpha=0.75)
     for filename in os.listdir(path):
         if filename.endswith(dataset_tail):
-            print(" -> Loading: {}".format(filename))
+            legend = None
             path_to_file = path + "/" + filename
-            noise_plotter.add_datafile(path_to_file)
+            print(" -> Loading: {}".format(filename))
+            data_file = open(path_to_file)
+            for line in data_file:
+                data = line.split()
+                if "#" in line:
+                    legend = line.strip("#\n")
+                    print(legend)
+            data_file.close()
+            noise_plotter.add_datafile(path_to_file, label=legend)
         else:
             print(" -> Skipping: {}".format(filename))
     noise_plotter.plot()    

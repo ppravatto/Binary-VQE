@@ -36,8 +36,9 @@ def plot_convergence(filename, target=None, save_plot=True, path=None, show=True
         plt.show()
 
 class Plot_VQE_stats():
-    def __init__(self, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
+    def __init__(self, bins=100, alpha=1, gauss=False, target=None, save_plot=True, path=None, show=True):
         self.bins=bins
+        self.alpha=alpha
         self.gauss=gauss
         self.target=target
         self.save_plot=save_plot
@@ -75,7 +76,7 @@ class Plot_VQE_stats():
         hist_range=[min_range, max_range]
         
         for dataset in loaded_data_real:
-            hist_data = plt.hist(dataset, bins=self.bins, range=hist_range, orientation='horizontal', label=self.labels[index])
+            hist_data = plt.hist(dataset, bins=self.bins, alpha=self.alpha ,range=hist_range, orientation='horizontal', label=self.labels[index])
             if max(hist_data[0]) > max_hist:
                 max_hist = max(hist_data[0])
             if self.gauss == True:
