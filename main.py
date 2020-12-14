@@ -90,6 +90,10 @@ while True:
         #Collect sampling noise using current parameters
         statistic_file = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_noise.txt"
         ext_params = None if config_data["VQE_opt_skip"] == False else RyRz_params
+        if config_data["VQE_opt_skip"] == True:
+            print("Initial parameters considered:")
+            print(ext_params)
+            print("")
         stats = vqe.get_expectation_statistic(sample=config_data["num_samples"], filename=statistic_file, verbose=True, ext_params=ext_params)
         print("Mean value:")
         print(stats['mean'].real)

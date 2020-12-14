@@ -83,6 +83,7 @@ input_buffer = input('''Select the operation to be performed:
     A) Post-processing of a single VQE run
     B) Post-processing of a multiple VQE run
     C) Compare different multiple VQE scans
+    D) Compare different noise statistics
 Selection (default: B): ''')
 
 if input_buffer.upper() == "C":
@@ -146,6 +147,24 @@ Selection (default: B): ''')
         else:
             sv_type = "min"
     plotter.plot_vqe_statistic_comparison(comparison_data, statevector=sv_comparison_data, statevector_type=sv_type, xlabel=xlabel, ylabel=ylabel, marker=data_avg)
+elif input_buffer.upper() == "D":
+    path = input("Select noise data folder: ")
+    if os.path.isdir(path)==False:
+        print("ERROR: {} is not a valid path".format(path))
+        exit()
+    dataset_tail = input("Select the data filename tail (default: _noise.txt): ")
+    dataset_tail = dataset_tail if dataset_tail != "" else "_noise.txt"
+    bins = input("Select number of bins (default: 50): ")
+    bins = 50 if bins == "" else int(bins)
+    noise_plotter = plotter.Plot_VQE_stats(bins=bins)
+    for filename in os.listdir(path):
+        if filename.endswith(dataset_tail):
+            print(" -> Loading: {}".format(filename))
+            path_to_file = path + "/" + filename
+            noise_plotter.add_datafile(path_to_file)
+        else:
+            print(" -> Skipping: {}".format(filename))
+    noise_plotter.plot()    
     
 else:
     average = input("\nSelect the number of average points (default: 10): ")

@@ -35,43 +35,82 @@ def plot_convergence(filename, target=None, save_plot=True, path=None, show=True
     if show == True:
         plt.show()
 
-def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
-    if show == False:
-        matplotlib.use('Agg')
-    myfile = open(filename, 'r')
-    data = [[],[]]
-    for line in myfile:
-        if "#" in line:
-            continue
-        data[0].append(float((line.split())[0]))
-        data[1].append(float((line.split())[1]))
-    myfile.close()
-    hist_data = plt.hist(data[0], bins=bins, orientation='horizontal')
-    if gauss == True:
-        mean = 0
-        std_dev = 0
-        for element in data[0]:
-            mean += element
-        mean = mean/len(data[0])
-        for element in data[0]:
-            std_dev += (element-mean)**2
-        std_dev = np.sqrt(std_dev/len(data[0]))
-        x, y = [], []
-        for i in range(1000):
-            z = -4*std_dev + 8*i*std_dev/1000 + mean
-            x.append(z)
-            y.append(max(hist_data[0])*unitary_height_gaussian(z, mean, std_dev))
-        plt.plot(y, x)
-    if target != 0:
-        plt.plot([0, max(hist_data[0])], [target, target], color='red', linestyle='--')
-    plt.xlabel("Number of samples")
-    plt.ylabel("Expectation value")
-    if save_plot == True:
-        fig_name = "sampling_noise.png" if path == None else path
-        plt.savefig(fig_name, dpi=600)
-    if show == True:
-        plt.show()
+class Plot_VQE_stats():
+    def __init__(self, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
+        self.bins=bins
+        self.gauss=gauss
+        self.target=target
+        self.save_plot=save_plot
+        self.path=path
+        self.show=show
+        self.filenames=[]
+        self.labels=[]
+        self.legend=False
+    
+    def add_datafile(self, filename, label=None):
+        self.filenames.append(filename)
+        self.labels.append(label)
+        if label != None:
+            self.legend = True
+    
+    def plot(self):
+        if self.show == False:
+            matplotlib.use('Agg')
+        max_hist = 0
+        loaded_data = []
+        for index, filename in enumerate(self.filenames):
+            myfile = open(filename, 'r')
+            data = [[],[]]
+            for line in myfile:
+                if "#" in line:
+                    continue
+                data[0].append(float((line.split())[0]))
+                data[1].append(float((line.split())[1]))
+            myfile.close()
+            loaded_data.append(data)
+        
+        loaded_data_real = [x[0] for x in loaded_data]
+        min_range = min([min(x) for x in loaded_data_real])
+        max_range = max([max(x) for x in loaded_data_real])
+        hist_range=[min_range, max_range]
+        
+        for dataset in loaded_data_real:
+            hist_data = plt.hist(dataset, bins=self.bins, range=hist_range, orientation='horizontal', label=self.labels[index])
+            if max(hist_data[0]) > max_hist:
+                max_hist = max(hist_data[0])
+            if self.gauss == True:
+                mean = 0
+                std_dev = 0
+                for element in dataset:
+                    mean += element
+                mean = mean/len(dataset)
+                for element in dataset:
+                    std_dev += (element-mean)**2
+                std_dev = np.sqrt(std_dev/len(dataset))
+                x, y = [], []
+                for i in range(1000):
+                    z = -4*std_dev + 8*i*std_dev/1000 + mean
+                    x.append(z)
+                    y.append(max(hist_data[0])*unitary_height_gaussian(z, mean, std_dev))
+                plt.plot(y, x)
+        
+        if self.target != 0:
+            plt.plot([0, max_hist], [self.target, self.target], color='red', linestyle='--')
+        plt.xlabel("Number of samples")
+        plt.ylabel("Expectation value")
+        if self.legend == True:
+            plt.legend(loc=1)
+        if self.save_plot == True:
+            fig_name = "sampling_noise.png" if self.path == None else self.path
+            plt.savefig(fig_name, dpi=600)
+        if self.show == True:
+            plt.show()
+    
 
+def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
+    myplot = Plot_VQE_stats(bins=bins, gauss=gauss, target=target, save_plot=save_plot, path=path, show=show)
+    myplot.add_datafile(filename)
+    myplot.plot()
 
 def plot_vqe_statistic_comparison(input_data, statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12,6))
