@@ -59,7 +59,7 @@ class Plot_VQE_stats():
             matplotlib.use('Agg')
         max_hist = 0
         loaded_data = []
-        for index, filename in enumerate(self.filenames):
+        for filename in self.filenames:
             myfile = open(filename, 'r')
             data = [[],[]]
             for line in myfile:
@@ -75,7 +75,7 @@ class Plot_VQE_stats():
         max_range = max([max(x) for x in loaded_data_real])
         hist_range=[min_range, max_range]
         
-        for dataset in loaded_data_real:
+        for index, dataset in enumerate(loaded_data_real):
             hist_data = plt.hist(dataset, bins=self.bins, alpha=self.alpha ,range=hist_range, orientation='horizontal', label=self.labels[index])
             if max(hist_data[0]) > max_hist:
                 max_hist = max(hist_data[0])
