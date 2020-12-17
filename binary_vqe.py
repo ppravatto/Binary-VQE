@@ -236,9 +236,9 @@ class BIN_VQE():
         if self.online == True and self.backend_name == "qasm_simulator":
             provider = IBMQ.load_account()
             device = provider.get_backend(quantum_device)
+            self.device_properties = device.properties() 
             self.noise_model = NoiseModel.from_backend(self.device_properties)
-            self.coupling_map = device.configuration().coupling_map
-            self.device_properties = device.properties()                
+            self.coupling_map = device.configuration().coupling_map  
         elif self.online == False and self.backend_name == "qasm_simulator":
             noise_folder = "\\noise_models\\" if os.name == 'nt' else "/noise_models/"
             noise_model_path = os.path.abspath(os.getcwd()) + noise_folder + quantum_device + ".npy"
