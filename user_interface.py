@@ -51,6 +51,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     contracted_name += str(input_buffer) + "_"
     config_data["VQE_depth"] = input_buffer
     config_data["RyRz_param_file"] = None
+    config_data["VQE_opt_skip"] = False
     input_buffer = input("    -> Do you want to define a custom set of parameters (y/n)? ")
     if input_buffer.upper() == "Y":
         input_buffer = input("        -> Select the parameter file (default: RyRz_params.txt) ")
@@ -60,6 +61,9 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
             exit()
         else:
             config_data["RyRz_param_file"] = input_buffer
+        if VQE_statistic_flag == False:
+            if(input("    -> Do you want to skip the optimization step (y/n)? ")).upper() == "Y":
+                config_data["VQE_opt_skip"] = True
             
     while True:
         input_buffer = input('''
@@ -79,57 +83,57 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         else:
             print("ERROR: {} is not a valid entry".format(input_buffer))
     config_data["VQE_exp_val_method"] = input_buffer
-            
-    while True:
-        input_buffer = input('''
-    Optimizer:
-        -> Optimizer type:
-            N) Nelder-Mead
-            C) COBYLA
-            L) SLSQP
-            S) SPSA
-        Selection: ''')
-        if input_buffer.upper() == "N":
-            input_buffer = "Nelder-Mead"
-            contracted_name += "N"
-            break
-        elif input_buffer.upper() == "C":
-            input_buffer = "COBYLA"
-            contracted_name += "C"
-            break
-        elif input_buffer.upper() == "L":
-            input_buffer = "SLSQP"
-            contracted_name += "L"
-            break
-        elif input_buffer.upper() == "S":
-            input_buffer = "SPSA"
-            contracted_name += "S"
-            break
+    
+    if config_data["VQE_opt_skip"] == False:
+        while True:
+            input_buffer = input('''
+        Optimizer:
+            -> Optimizer type:
+                N) Nelder-Mead
+                C) COBYLA
+                L) SLSQP
+                S) SPSA
+            Selection: ''')
+            if input_buffer.upper() == "N":
+                input_buffer = "Nelder-Mead"
+                contracted_name += "N"
+                break
+            elif input_buffer.upper() == "C":
+                input_buffer = "COBYLA"
+                contracted_name += "C"
+                break
+            elif input_buffer.upper() == "L":
+                input_buffer = "SLSQP"
+                contracted_name += "L"
+                break
+            elif input_buffer.upper() == "S":
+                input_buffer = "SPSA"
+                contracted_name += "S"
+                break
+            else:
+                print("ERROR: {} is not a valid entry".format(input_buffer))
+        config_data["VQE_optimizer"] = input_buffer
+        contracted_name += "_"
+
+        input_buffer = input("    -> Maximum number of iterations (default: 400): ")
+        input_buffer = 400 if input_buffer == "" else int(input_buffer)
+        config_data["VQE_max_iter"] = input_buffer
+
+        opt_options = {}
+        if config_data["VQE_optimizer"] == "SPSA":
+            input_buffer = None
+            if input("    -> Do you want to define custom coefficents for SPSA (y/n)? ").upper() == "Y":
+                print("       Select the parameters (Press enter to select the default value):")
+                for i in range(5):
+                    label = 'c' + str(i)
+                    buffer = input("        " + label + ": ")
+                    if buffer != "":
+                        opt_options[label] = float(buffer)
         else:
-            print("ERROR: {} is not a valid entry".format(input_buffer))
-    config_data["VQE_optimizer"] = input_buffer
-    contracted_name += "_"
-
-    input_buffer = input("    -> Maximum number of iterations (default: 400): ")
-    input_buffer = 400 if input_buffer == "" else int(input_buffer)
-    config_data["VQE_max_iter"] = input_buffer
-
-    opt_options = {}
-    if config_data["VQE_optimizer"] == "SPSA":
-        input_buffer = None
-        if input("    -> Do you want to define custom coefficents for SPSA (y/n)? ").upper() == "Y":
-            print("       Select the parameters (Press enter to select the default value):")
-            for i in range(5):
-                label = 'c' + str(i)
-                buffer = input("        " + label + ": ")
-                if buffer != "":
-                    opt_options[label] = float(buffer)
-    else:
-        input_buffer = input("    -> Optimizer tolerance (default: 1e-6): ")
-        input_buffer = 1e-6 if input_buffer == "" else float(input_buffer)
-    config_data["opt_options"] = opt_options
-    config_data["VQE_tol"] = input_buffer
-
+            input_buffer = input("    -> Optimizer tolerance (default: 1e-6): ")
+            input_buffer = 1e-6 if input_buffer == "" else float(input_buffer)
+        config_data["opt_options"] = opt_options
+        config_data["VQE_tol"] = input_buffer
 
     VQE_shots = 1
     VQE_quantum_device = None
