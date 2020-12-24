@@ -15,6 +15,7 @@ from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 from qiskit.aqua.quantum_instance import QuantumInstance
 
 I = complex(0, 1)
+IBM_basis_gates = ['u1', 'u2', 'u3', 'cx']
 
 def get_bin_list(number, register_length, invert=False):
     string = "{0:b}".format(number)
@@ -143,6 +144,7 @@ class BIN_VQE():
         if self.expect_method == "graph_coloring":
             hamiltonian = WeightedPauliOperator.from_list(self.pauli_list, self.pauli_coeff_list)
             self.hamiltonian = hamiltonian.to_opflow()
+        self.IBMQ_device = False
         self.backend_name = 'qasm_simulator'
         self.backend = Aer.get_backend('qasm_simulator')
         self.shots = 1024
@@ -220,14 +222,26 @@ class BIN_VQE():
         return qc
     
     def configure_backend(self, backend_name='qasm_simulator', num_shots=1024, simulator_options=None):
-        self.backend = Aer.get_backend(backend_name)
-        self.backend_name = backend_name
         if backend_name != 'statevector_simulator':
             self.shots = num_shots
         else:
             self.shots = 1
-        if simulator_options != None:
-            self.simulator_options = simulator_options
+        with open("IBMQ_devices", 'r') as IBMQ_list:
+            for line in IBMQ_list:
+                if line == backend_name:
+                    self.IBMQ_device = True
+                    break
+        if self.IBMQ_device == True:
+            provider = IBMQ.load_account()
+            self.backend = provider.get_backend(backend_name)
+        elif backend_name == 'qasm_simulator' or backend_name == 'statevector_simulator':
+            self.backend = Aer.get_backend(backend_name)
+            self.backend_name = backend_name
+            if simulator_options != None:
+                self.simulator_options = simulator_options
+        else:
+            print("ERROR: {} is not a known backend".format(backend_name))
+            exit()
         
     def import_noise_model(self, quantum_device, error_mitigation=True, online=True):
         self.online = online
@@ -251,7 +265,15 @@ class BIN_VQE():
             exit()
         
     def set_q_instance(self, calib_mat_refresh=9999):
-        if self.noise_model_flag == True:
+        if self.IBMQ_device == True:
+            self.q_instance = QuantumInstance(
+                self.backend,
+                shots=self.shots,
+                measurement_error_mitigation_cls=CompleteMeasFitter,
+                optimization_level=3,
+                basis_gates=IBM_basis_gates
+                )
+        elif self.noise_model_flag == True:
             error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
             self.q_instance = QuantumInstance(
                 self.backend,
@@ -262,7 +284,7 @@ class BIN_VQE():
                 measurement_error_mitigation_cls=error_mitigation_algorithm,
                 cals_matrix_refresh_period=calib_mat_refresh,
                 optimization_level=3,
-                basis_gates=['u1', 'u2', 'u3', 'cx']
+                basis_gates=IBM_basis_gates
                 )
         else:
             self.q_instance = QuantumInstance(self.backend, shots=self.shots, backend_options=self.simulator_options)
@@ -315,7 +337,16 @@ class BIN_VQE():
             qc = self.get_circuit(post_rotation, parameters)
             circuit_buffer.append(qc)
         post_rotation_data = {}
-        if self.backend_name == 'qasm_simulator':
+        if self.IBMQ_device == True:
+                job = execute(circuit_buffer, self.backend, shots=self.shots)
+                print("Job set to IBM Quantum computer")
+                job.wait_for_final_state()
+                print(" -> Job done")
+                results = job.result()
+                counts = results.get_counts()
+                for index, post_rotation in enumerate(self.post_rot):
+                    post_rotation_data[post_rotation] = counts[index]
+        elif self.backend_name == 'qasm_simulator':
             if self.noise_model_flag == False:
                 job = execute(circuit_buffer, self.backend, shots=self.shots, backend_options=self.simulator_options)
                 results = job.result()
