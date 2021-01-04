@@ -339,7 +339,7 @@ class BIN_VQE():
         post_rotation_data = {}
         if self.IBMQ_device == True:
                 job = execute(circuit_buffer, self.backend, shots=self.shots)
-                print("Job set to IBM Quantum computer")
+                print("Job sent to IBM Quantum computer")
                 job.wait_for_final_state()
                 print(" -> Job done")
                 results = job.result()
@@ -410,7 +410,7 @@ class BIN_VQE():
             qc = self.get_variational_circuit(parameters, classical_register=False)
             psi = CircuitStateFn(qc)
             measurable_expression = StateFn(self.hamiltonian, is_measurement=True).compose(psi)
-            if self.backend_name == 'qasm_simulator':
+            if self.backend_name == 'qasm_simulator' or self.IBMQ_device == True:
                 expectation = PauliExpectation().convert(measurable_expression)
             elif self.backend_name == 'statevector_simulator':
                 expectation = AerPauliExpectation().convert(measurable_expression)
