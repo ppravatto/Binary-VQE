@@ -15,7 +15,7 @@ from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 from qiskit.aqua.quantum_instance import QuantumInstance
 
 I = complex(0, 1)
-IBM_basis_gates = ['u1', 'u2', 'u3', 'cx']
+IBM_basis_gates = ['id', 'rz', 'sx', 'x', 'cx']
 
 def get_bin_list(number, register_length, invert=False):
     string = "{0:b}".format(number)
@@ -228,7 +228,8 @@ class BIN_VQE():
             self.shots = 1
         with open("IBMQ_devices", 'r') as IBMQ_list:
             for line in IBMQ_list:
-                if line == backend_name:
+                qname = line.split()[0]
+                if qname == backend_name:
                     self.IBMQ_device = True
                     break
         if self.IBMQ_device == True:
@@ -271,7 +272,8 @@ class BIN_VQE():
                 shots=self.shots,
                 measurement_error_mitigation_cls=CompleteMeasFitter,
                 optimization_level=3,
-                basis_gates=IBM_basis_gates
+                basis_gates=IBM_basis_gates,
+                skip_qobj_validation=False
                 )
         elif self.noise_model_flag == True:
             error_mitigation_algorithm = CompleteMeasFitter if self.error_mitigation_flag == True else None
@@ -338,11 +340,7 @@ class BIN_VQE():
             circuit_buffer.append(qc)
         post_rotation_data = {}
         if self.IBMQ_device == True:
-                job = execute(circuit_buffer, self.backend, shots=self.shots)
-                print("Job sent to IBM Quantum computer")
-                job.wait_for_final_state()
-                print(" -> Job done")
-                results = job.result()
+                results = self.q_instance.execute(circuit_buffer)
                 counts = results.get_counts()
                 for index, post_rotation in enumerate(self.post_rot):
                     post_rotation_data[post_rotation] = counts[index]

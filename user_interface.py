@@ -207,7 +207,8 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
             break
         elif VQE_backend.upper() == "P" and config_data["VQE_opt_skip"] == True:
             contracted_name += "P"
-            VQE_backend = print_IBMQ_device_menu(spacer="")
+            print("\n    Select the IBMQ quantum processor:")
+            VQE_backend = print_IBMQ_device_menu()
             VQE_shots = input("    quantum processor number of shots (default: 8192): ")
             VQE_shots = 8192 if VQE_shots == "" else int(VQE_shots)
             if VQE_shots%1000 == 0:
@@ -215,6 +216,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
                 contracted_name += "k"
             else:
                 contracted_name += str(VQE_shots)
+            break
         else:
             print("ERROR: {} is not a valid backend".format(VQE_backend))
 

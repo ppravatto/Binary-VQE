@@ -82,7 +82,7 @@ while True:
         conv_picture_name = config_data["base_folder"] + "/" + config_data["contracted_name"] + "_convergence.png"
         myplt.plot_convergence(iteration_file, config_data["target"], path=conv_picture_name, show=show_flag)
 
-    if config_data["backend"] != "qasm_simulator" and config_data["backend"] != "statevector_simulator":
+    if config_data["VQE_backend"] != "qasm_simulator" and config_data["VQE_backend"] != "statevector_simulator":
         expect_val = vqe.compute_expectation_value(RyRz_params)
         print("Expectation value: {} + {}j".format(expect_val.real, expect_val.imag))
         print("-------------------------------------------------------------")
