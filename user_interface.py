@@ -4,6 +4,25 @@ import numpy as np
 from qiskit import IBMQ
 from qiskit.providers.aer.noise import NoiseModel
 
+def print_IBMQ_device_menu(spacer="    "):
+    IBMQ_device_file = open("IBMQ_devices", 'r')
+    IBMQ_device_list = IBMQ_device_file.readlines()
+    IBMQ_device_file.close()
+    for i, line in enumerate(IBMQ_device_list):
+        device_data = line.split()
+        print("""{}{}) '{}' - ({} qubits)""".format(spacer, chr(65+i), device_data[0], device_data[1]))
+    VQE_quantum_device = input("{}Selection (default: ibmq_16_melbourne): ".format(spacer)).upper()
+    search_flag = False
+    for i, line in enumerate(IBMQ_device_list):
+        if VQE_quantum_device == chr(65+i):
+            VQE_quantum_device = (line.split())[0]
+            search_flag = True
+            break
+    if search_flag == False:
+        VQE_quantum_device = 'ibmq_16_melbourne'
+    print("{}-> Selected device: {}\n".format(spacer, VQE_quantum_device))
+    return VQE_quantum_device
+
 def get_user_input(VQE_statistic_flag=False, auto_flag=False):
 
     config_data = {}
@@ -138,11 +157,21 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     VQE_shots = 1
     VQE_quantum_device = None
     while True:
-        VQE_backend = input('''
+        VQE_backend = None
+        if config_data["VQE_opt_skip"] == False:
+            VQE_backend = input('''
     Backend:
         -> Simulators:
             Q) QASM simulator
             S) Statevector simulator
+        Selection: ''')
+        else:
+            VQE_backend = input('''
+    Backend:
+        -> Simulators:
+            Q) QASM simulator
+            S) Statevector simulator
+            P) Quantum processor
         Selection: ''')
         if VQE_backend.upper() == "Q":
             contracted_name += "Q"
@@ -156,22 +185,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
                 contracted_name += str(VQE_shots)
             VQE_error_mitigation = False
             if input("    Do you want to import a noise model from IBMQ device (y/n)? ").upper() == "Y":
-                IBMQ_device_file = open("IBMQ_devices", 'r')
-                IBMQ_device_list = IBMQ_device_file.readlines()
-                IBMQ_device_file.close()
-                for i, line in enumerate(IBMQ_device_list):
-                    device_data = line.split()
-                    print("""        {}) '{}' - ({} qubits)""".format(chr(65+i), device_data[0], device_data[1]))
-                VQE_quantum_device = input("    Selection (default: ibmq_16_melbourne): ").upper()
-                search_flag = False
-                for i, line in enumerate(IBMQ_device_list):
-                    if VQE_quantum_device == chr(65+i):
-                        VQE_quantum_device = (line.split())[0]
-                        search_flag = True
-                        break
-                if search_flag == False:
-                    VQE_quantum_device = 'ibmq_16_melbourne'
-                print("     -> Selected device: {}\n".format(VQE_quantum_device))
+                VQE_quantum_device = print_IBMQ_device_menu()
                 buffer = input('''    Select when to download the noise models: 
         N) Download the noise models now and store them
         L) Download the noise models when the script starts
@@ -190,6 +204,18 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         elif VQE_backend.upper() == "S":
             contracted_name += "S"
             VQE_backend = "statevector_simulator"
+            break
+        elif VQE_backend.upper() == "P" and config_data["VQE_opt_skip"] == True:
+            contracted_name += "P"
+            print("\n    Select the IBMQ quantum processor:")
+            VQE_backend = print_IBMQ_device_menu()
+            VQE_shots = input("    quantum processor number of shots (default: 8192): ")
+            VQE_shots = 8192 if VQE_shots == "" else int(VQE_shots)
+            if VQE_shots%1000 == 0:
+                contracted_name += str(int(VQE_shots/1000))
+                contracted_name += "k"
+            else:
+                contracted_name += str(VQE_shots)
             break
         else:
             print("ERROR: {} is not a valid backend".format(VQE_backend))
@@ -239,30 +265,31 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     config_data["statistic_flag"] = statistic_flag
 
     simulator_options = {}
-    if VQE_statistic_flag == True:
-        simulator_options = {
-            "method": "automatic",
-            "max_parallel_threads": 1,
-            "max_parallel_experiments": 1,
-            "max_parallel_shots": 1
-        }
-    else:
-        if config_data["VQE_exp_val_method"] == "direct":
-            if input("\n    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
-                threads = 0
-            else:
-                threads = 1
-        if config_data["VQE_exp_val_method"] == "direct":
+    if VQE_backend == "qasm_simulator" or VQE_backend == "statevector_simulator":
+        if VQE_statistic_flag == True:
             simulator_options = {
                 "method": "automatic",
-                "max_parallel_threads": threads,
-                "max_parallel_experiments": threads,
+                "max_parallel_threads": 1,
+                "max_parallel_experiments": 1,
                 "max_parallel_shots": 1
             }
         else:
-            simulator_options = {
-                "method": "automatic"
-            }
+            if config_data["VQE_exp_val_method"] == "direct":
+                if input("\n    -> Do you want to run a parallel simulation (y/n)? ").upper() == "Y":
+                    threads = 0
+                else:
+                    threads = 1
+            if config_data["VQE_exp_val_method"] == "direct":
+                simulator_options = {
+                    "method": "automatic",
+                    "max_parallel_threads": threads,
+                    "max_parallel_experiments": threads,
+                    "max_parallel_shots": 1
+                }
+            else:
+                simulator_options = {
+                    "method": "automatic"
+                }
     config_data["simulator_options"] = simulator_options
     print("-------------------------------------------------------------\n")
     return config_data
@@ -320,11 +347,12 @@ def save_report(config_data, real, imag, path=None):
         RyRz_params = load_array_for_file(config_data["RyRz_param_file"])
         report.write("Adopted user defined RyRz parameters:\n{}\n".format(RyRz_params))
     report.write("Expectation value computation method: {}\n".format(config_data["VQE_exp_val_method"]))
-    report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))
-    if config_data["VQE_optimizer"] != "SPSA":
-        report.write("Tol: {}\n".format(config_data["VQE_tol"]))
-    else:
-        report.write("\n")
+    if config_data["VQE_opt_skip"] == False:
+        report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))
+        if config_data["VQE_optimizer"] != "SPSA":
+            report.write("Tol: {}\n".format(config_data["VQE_tol"]))
+        else:
+            report.write("\n")
     report.write("Backend: {}, Shots: {}\n\n".format(config_data["VQE_backend"], config_data["VQE_shots"]))
     if config_data["VQE_quantum_device"] != None:
         error_mitigation_flag = "YES" if config_data["VQE_error_mitigation"] == True else "NO"
