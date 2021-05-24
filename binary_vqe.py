@@ -1,4 +1,5 @@
-import os
+import os, copy
+from numpy.lib.function_base import copy
 from qiskit import *
 import spsa_overload as myopt
 import numpy as np
@@ -62,7 +63,7 @@ def convert_pauli_string_to_aqua_op(pauli_string):
 
 class BIN_VQE():
 
-    def __init__(self, filename, method="graph_coloring", verbose=False, entanglement="full", depth=1, threshold=0, offset=None):
+    def __init__(self, filename, ordering=None, method="graph_coloring", verbose=False, entanglement="full", depth=1, threshold=0, offset=None):
         self.expect_method = method
         self.expectation_value = None
         self.expectation_statistic = None
@@ -81,7 +82,7 @@ class BIN_VQE():
             print("ERROR: the matrix element threshold cannot be negative")
             exit()
         self.threshold = float(threshold)
-        self.integrals = [[],[],[]]
+        integrals = [[],[],[]]
         if os.path.isfile(filename)==True:
             myfile = open(filename, 'r')
             for row, line in enumerate(myfile):
@@ -91,13 +92,50 @@ class BIN_VQE():
                     self.N = int(np.ceil(np.log2(self.M)))
                 for col, element in enumerate(myline):
                     if np.abs(float(element)) > self.threshold:
-                        self.integrals[0].append(int(row))
-                        self.integrals[1].append(int(col))
-                        self.integrals[2].append(float(element))
+                        integrals[0].append(int(row))
+                        integrals[1].append(int(col))
+                        integrals[2].append(float(element))
             myfile.close()
         else:
             print("ERROR: datafile not found\n")
             exit()
+        
+        self.integrals = [[],[],[]]
+        if ordering == None:
+            for i in len(integrals[0]):
+                for j in range(3):
+                    self.integrals[j].append(integrals[j][i])
+        else:
+            if len(ordering) != self.M:
+                print("ERROR: mismatch in ordering list lenght")
+                exit()
+            print("ORDERING")
+            print(ordering)
+            for i in range(self.M):
+                if i not in ordering:
+                    print("ERROR: element {} missing in ordering list".format(i))
+                    exit()
+            for r in range(self.M):
+                srow = ordering[r]
+                for c in range(self.M):
+                    scol = ordering[c]
+                    for idx, element in enumerate(integrals[2]):
+                        if integrals[0][idx] == srow and integrals[1][idx] == scol:
+                            self.integrals[0].append(r)
+                            self.integrals[1].append(c)
+                            self.integrals[2].append(element)
+                            break
+            print("\nOld ordering")
+            print("rows: {}".format(integrals[0]))
+            print("cows: {}".format(integrals[1]))
+            print("elements:")
+            print(integrals[2])
+            print("\nNew ordering")
+            print("rows: {}".format(self.integrals[0]))
+            print("cows: {}".format(self.integrals[1]))
+            print("elements:")
+            print(self.integrals[2])
+            print("\n")
         self.qubits = range(self.N)
         self.num_params = 2*(1+self.depth)*self.N
         if 2**self.N != self.M:
@@ -187,8 +225,10 @@ class BIN_VQE():
             exit()
         qc = QuantumCircuit(self.N, name="RyRz\n({}, d{})".format(self.entanglement, self.depth))
         for qubit in self.qubits:
-            qc.ry(param[qubit], qubit)
-            qc.rz(param[qubit+self.N], qubit)
+            #qc.ry(param[qubit], qubit)
+            #qc.rz(param[qubit+self.N], qubit)
+            qc.ry(param[qubit*2*(self.depth+1)], qubit)
+            qc.rz(param[qubit*2*(self.depth+1)+1], qubit)
         for layer in range(1, self.depth+1):
             for control in range(self.N-1):
                 for target in range(control+1, self.N):
@@ -198,8 +238,10 @@ class BIN_VQE():
                     qc.cx(control, target)
                     qc.h(target)
             for qubit in self.qubits:
-                qc.ry(param[qubit+2*layer*self.N], qubit)
-                qc.rz(param[qubit+(2*layer+1)*self.N], qubit)    
+                #qc.ry(param[qubit+2*layer*self.N], qubit)
+                #qc.rz(param[qubit+(2*layer+1)*self.N], qubit)    
+                qc.ry(param[qubit*2*(self.depth+1)+2], qubit)
+                qc.rz(param[qubit*2*(self.depth+1)+3], qubit)  
         return qc
     
     def measure(self, post_rotation, measure=True):

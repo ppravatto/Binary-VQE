@@ -1,28 +1,19 @@
-import binary_vqe, user_interface
+import binary_vqe, user_interface, incremental
 import plotter as myplt
 import numpy as np
 import time, os, sys, shutil
 from datetime import datetime
 
-config_data = None
-if len(sys.argv)==1:
-    config_data = user_interface.get_user_input()
-else:
-    if os.path.isfile(sys.argv[1])==True:
-        config_data = user_interface.load_dictionary_from_file(sys.argv[1])
-    else:
-        print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
-        exit()
-
-while True:
-
-    config_data = user_interface.initialize_execution(config_data)
+def VQE_run_function(config_data, ordering=None, incremental_index=None):
 
     start_time = time.time()
-    
     offset = None if config_data["auto_flag"] == False else False
+
+    VQE_matrix_filename = config_data["VQE_file"] if config_data["incremental"] == False else config_data["VQE_file"] + "_{}Q.txt".format(incremental_index)
+
     vqe = binary_vqe.BIN_VQE(
-        config_data["VQE_file"],
+        VQE_matrix_filename,
+        ordering=ordering,
         method=config_data["VQE_exp_val_method"],
         entanglement=config_data["VQE_entanglement"],
         verbose=True,
@@ -49,7 +40,11 @@ while True:
     iteration_file = config_data["iteration_folder"] + "/" + config_data["contracted_name"] + "_iteration.txt"
     
     RyRz_params = []
-    if config_data["RyRz_param_file"] != None:
+    if config_data["incremental"] == True:
+        if incremental_index != 2:
+            RyRz_incr_filename = "RyRz_incremental_{}Q.txt".format(incremental_index-1)
+            RyRz_params = user_interface.load_array_for_file(RyRz_incr_filename)
+    elif config_data["RyRz_param_file"] != None:
         RyRz_params = user_interface.load_array_for_file(config_data["RyRz_param_file"])
     
     show_flag = True if config_data["auto_flag"]==False else False
@@ -73,6 +68,14 @@ while True:
         user_interface.save_report(config_data, real, immaginary)
         
         optimized_parameters = vqe.parameters
+        if config_data["incremental"] == True:
+            RyRz_incr_filename = "RyRz_incremental_{}Q.txt".format(incremental_index)
+            with open(RyRz_incr_filename, 'w') as ryrz_file:
+                for element in optimized_parameters:
+                    ryrz_file.write("{}\n".format(element))
+                for i in range(4):
+                    ryrz_file.write("{}\n".format(0.))
+
         opt_param_file = open(config_data["iteration_folder"] + "/" + "VQE_opt_params.txt", 'w')
         for element in optimized_parameters:
             opt_param_file.write("{}\n".format(element))
@@ -118,8 +121,8 @@ while True:
     print("-------------------------------------------------------------")
     print("NORMAL TERMINATION")
 
-    user_interface.finalize_execution(config_data)
-    
+    user_interface.finalize_execution(config_data, incremental_index=incremental_index)
+
     if config_data["auto_flag"] == True:
         if config_data["temp_file"] == True:
             temp_folder = ".VQE_temp"
@@ -132,6 +135,37 @@ while True:
             if config_data["statistic_flag"] == True and aux_statistic_flag.upper() != "Y":
                 temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_noise.png"
                 shutil.copyfile(noise_picture_name, temp_picture_name)
+
+
+
+config_data = None
+if len(sys.argv)==1:
+    input_buffer = input("Do you want to perform an incremental VQE calculation (Y/N)?")
+    if input_buffer.upper() == "Y":
+        incr_flag = True
+    else:
+        incr_flag = False
+    config_data = user_interface.get_user_input(incremental_flag=incr_flag)
+else:
+    if os.path.isfile(sys.argv[1])==True:
+        config_data = user_interface.load_dictionary_from_file(sys.argv[1])
+    else:
+        print("""ERROR: input file ("{}") not found""".format(sys.argv[1]))
+        exit()
+
+while True:
+
+    config_data = user_interface.initialize_execution(config_data)
+
+    if config_data["incremental"] == True:
+        ordering_list = incremental.get_ordering_lists(config_data["Inc_basis_root"], config_data["Inc_max_Q"])
+        for incr_idx in range(2, config_data["Inc_max_Q"]+1):
+            oredring = ordering_list[incr_idx-2]
+            VQE_run_function(config_data, ordering=oredring, incremental_index=incr_idx)
+    else:
+        VQE_run_function(config_data)
+    
+    if config_data["auto_flag"] == True:
         break
     else:
         restart = input("Would you like to run another calculation with the same parameters (y/n)? ")

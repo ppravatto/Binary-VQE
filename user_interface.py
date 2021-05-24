@@ -23,21 +23,27 @@ def print_IBMQ_device_menu(spacer="    "):
     print("{}-> Selected device: {}\n".format(spacer, VQE_quantum_device))
     return VQE_quantum_device
 
-def get_user_input(VQE_statistic_flag=False, auto_flag=False):
+def get_user_input(VQE_statistic_flag=False, auto_flag=False, incremental_flag=False):
 
     config_data = {}
     config_data["auto_flag"] = auto_flag
+    config_data["incremental"] = incremental_flag
     os.system('cls' if os.name == 'nt' else 'clear')
 
     print('''-------------------------------------------------------------
                         BINARY VQE
 -------------------------------------------------------------
     ''')
-    input_buffer = input("""Select the Hamiltonian matrix file (default: "VQE.txt"): """)
-    input_buffer = "VQE.txt" if input_buffer == "" else input_buffer
-    if auto_flag==False and os.path.isfile(input_buffer)==False:
-        print("ERROR: {} datafile not found\n".format(input_buffer))
+    if incremental_flag == False:
+        input_buffer = input("""Select the Hamiltonian matrix file (default: "VQE.txt"): """)
+        input_buffer = "VQE.txt" if input_buffer == "" else input_buffer
+        if auto_flag==False and os.path.isfile(input_buffer)==False:
+            print("ERROR: {} datafile not found\n".format(input_buffer))
         exit()
+    else:
+        print("-> INCREMENTAL PROCEDURE SELECTED\n")
+        input_buffer = input("""Select the Hamiltonian matrix root filename (default: "VQE"): """)
+        input_buffer = "VQE" if input_buffer == "" else input_buffer
     config_data["VQE_file"] = input_buffer
 
     input_buffer = input("    -> Select matrix element threshold: (default: 0): " )
@@ -45,6 +51,17 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     config_data["VQE_threshold"] = input_buffer
 
     contracted_name = ""
+
+    if incremental_flag == True:
+        print("\nBasis-set composition selection for incremental strategy:")
+        config_data["Inc_max_Q"] = int(input("    -> Select the maximum number of qubits: "))
+        input_buffer = input("""    -> Select root for basis-set files (default: "Comp"): """)
+        config_data["Inc_basis_root"] = "Comp" if input_buffer == "" else input_buffer
+        for n in range(2, config_data["Inc_max_Q"]+1):
+            filename = config_data["Inc_basis_root"] + "_{}Q.txt".format(n)
+            if os.path.isfile(filename)==False:
+                print("ERROR: basis-set file {} missing".format(filename))
+                exit()
 
     while True:
         input_buffer = input('''
@@ -71,18 +88,19 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
     config_data["VQE_depth"] = input_buffer
     config_data["RyRz_param_file"] = None
     config_data["VQE_opt_skip"] = False
-    input_buffer = input("    -> Do you want to define a custom set of parameters (y/n)? ")
-    if input_buffer.upper() == "Y":
-        input_buffer = input("        -> Select the parameter file (default: RyRz_params.txt) ")
-        input_buffer = "RyRz_params.txt" if input_buffer == "" else input_buffer
-        if auto_flag==False and os.path.isfile(input_buffer)==False:
-            print("ERROR: {} RyRz parameter file not found\n".format(input_buffer))
-            exit()
-        else:
-            config_data["RyRz_param_file"] = input_buffer
-        if VQE_statistic_flag == False:
-            if(input("    -> Do you want to skip the optimization step (y/n)? ")).upper() == "Y":
-                config_data["VQE_opt_skip"] = True
+    if incremental_flag == False:
+        input_buffer = input("    -> Do you want to define a custom set of parameters (y/n)? ")
+        if input_buffer.upper() == "Y":
+            input_buffer = input("        -> Select the parameter file (default: RyRz_params.txt) ")
+            input_buffer = "RyRz_params.txt" if input_buffer == "" else input_buffer
+            if auto_flag==False and os.path.isfile(input_buffer)==False:
+                print("ERROR: {} RyRz parameter file not found\n".format(input_buffer))
+                exit()
+            else:
+                config_data["RyRz_param_file"] = input_buffer
+            if VQE_statistic_flag == False:
+                if(input("    -> Do you want to skip the optimization step (y/n)? ")).upper() == "Y":
+                    config_data["VQE_opt_skip"] = True
             
     while True:
         input_buffer = input('''
@@ -252,7 +270,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False):
         VQE_num_bins = 25 if VQE_num_bins == "" else int(VQE_num_bins)
         config_data["VQE_num_samples"] = VQE_num_samples
         config_data["VQE_num_bins"] = VQE_num_bins
-    elif VQE_backend != "statevector_simulator":
+    elif VQE_backend != "statevector_simulator" and incremental_flag == False:
         if input("\n    -> Do you want to accumulate converged value statistic (y/n)? ").upper() == "Y":
             statistic_flag = True
             num_samples = input("         Select number of samples (default: 1000): ")
@@ -319,9 +337,10 @@ def initialize_execution(config_data):
             exit()
     return config_data
 
-def finalize_execution(config_data):
-    VQE_copy_file = "./" + config_data["base_folder"] + "/" + config_data["VQE_file"]
-    shutil.copyfile(config_data["VQE_file"], VQE_copy_file)
+def finalize_execution(config_data, incremental_index=None):
+    VQE_matrix_filename = config_data["VQE_file"] if incremental_index == None else config_data["VQE_file"] + "_{}Q.txt".format(incremental_index)
+    VQE_copy_file = "./" + config_data["base_folder"] + "/" + VQE_matrix_filename
+    shutil.copyfile(VQE_matrix_filename, VQE_copy_file)
     if config_data["target_file"] != None:
         target_copy_file = "./" + config_data["base_folder"] + "/" + config_data["target_file"]
         shutil.copyfile(config_data["target_file"], target_copy_file)
@@ -337,7 +356,8 @@ def load_array_for_file(filename, dtype=float):
 
 def save_report(config_data, real, imag, path=None):
     folder = config_data["base_folder"] if path==None else path
-    report_file = folder + "/" + config_data["contracted_name"] + "_report.txt"
+    tail = "_report.txt" if config_data["incremental"] == False else "_report_incr_{}Q.txt".format(config_data["N"])
+    report_file = folder + "/" + config_data["contracted_name"] + tail
     report = open(report_file, 'w')
     report.write("Date: {}\n".format(config_data["date"]))
     report.write("Time: {}\n\n".format(config_data["time"]))
