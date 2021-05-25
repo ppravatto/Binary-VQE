@@ -366,6 +366,14 @@ def save_report(config_data, real, imag, path=None):
     if config_data["RyRz_param_file"] != None:
         RyRz_params = load_array_for_file(config_data["RyRz_param_file"])
         report.write("Adopted user defined RyRz parameters:\n{}\n".format(RyRz_params))
+    if config_data["incremental"] == True:
+        if config_data["N"] != 2:
+            RyRz_incr_filename = config_data["iteration_folder"] + "/incremental_data/" + "RyRz_incremental_{}Q.txt".format(config_data["N"]-1)
+            RyRz_params = load_array_for_file(RyRz_incr_filename)
+            report.write("Adopted incrementally defined RyRz parameters:\n{}\n".format(RyRz_params))
+        RyRz_incr_filename = config_data["iteration_folder"] + "/incremental_data/" + "RyRz_incremental_{}Q.txt".format(config_data["N"])
+        RyRz_params = load_array_for_file(RyRz_incr_filename)
+        report.write("Optimized RyRz parameter set defined:\n{}\n".format(RyRz_params))
     report.write("Expectation value computation method: {}\n".format(config_data["VQE_exp_val_method"]))
     if config_data["VQE_opt_skip"] == False:
         report.write("Optimizer: {}, Max Iter: {}\n".format(config_data["VQE_optimizer"], config_data["VQE_max_iter"]))

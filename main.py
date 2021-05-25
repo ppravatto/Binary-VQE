@@ -42,7 +42,7 @@ def VQE_run_function(config_data, ordering=None, incremental_index=None):
     RyRz_params = []
     if config_data["incremental"] == True:
         if incremental_index != 2:
-            RyRz_incr_filename = "RyRz_incremental_{}Q.txt".format(incremental_index-1)
+            RyRz_incr_filename = config_data["iteration_folder"] + "/incremental_data/" + "RyRz_incremental_{}Q.txt".format(incremental_index-1)
             RyRz_params = user_interface.load_array_for_file(RyRz_incr_filename)
     elif config_data["RyRz_param_file"] != None:
         RyRz_params = user_interface.load_array_for_file(config_data["RyRz_param_file"])
@@ -64,17 +64,17 @@ def VQE_run_function(config_data, ordering=None, incremental_index=None):
         vqe_runtime = time.time() - start_time
         print("OPTIMIZATION TERMINATED - Runtime: {}s".format(vqe_runtime))
         config_data["runtime"] = vqe_runtime
-
-        user_interface.save_report(config_data, real, immaginary)
         
         optimized_parameters = vqe.parameters
         if config_data["incremental"] == True:
-            RyRz_incr_filename = "RyRz_incremental_{}Q.txt".format(incremental_index)
+            RyRz_incr_filename = config_data["iteration_folder"] + "/incremental_data/" + "RyRz_incremental_{}Q.txt".format(incremental_index)
             with open(RyRz_incr_filename, 'w') as ryrz_file:
                 for element in optimized_parameters:
                     ryrz_file.write("{}\n".format(element))
                 for i in range(4):
                     ryrz_file.write("{}\n".format(0.))
+        
+        user_interface.save_report(config_data, real, immaginary)
 
         opt_param_file = open(config_data["iteration_folder"] + "/" + "VQE_opt_params.txt", 'w')
         for element in optimized_parameters:
@@ -119,7 +119,7 @@ def VQE_run_function(config_data, ordering=None, incremental_index=None):
         myplt.plot_vqe_statistic(statistic_file, bins=config_data["num_bins"], gauss=True, target=config_data["target"], path=noise_picture_name, show=show_flag)
 
     print("-------------------------------------------------------------")
-    print("NORMAL TERMINATION")
+    print("NORMAL TERMINATION\n")
 
     user_interface.finalize_execution(config_data, incremental_index=incremental_index)
 
@@ -156,12 +156,12 @@ else:
 while True:
 
     config_data = user_interface.initialize_execution(config_data)
-
     if config_data["incremental"] == True:
+        os.mkdir(config_data["iteration_folder"] + "/incremental_data")
         ordering_list = incremental.get_ordering_lists(config_data["Inc_basis_root"], config_data["Inc_max_Q"])
         for incr_idx in range(2, config_data["Inc_max_Q"]+1):
-            oredring = ordering_list[incr_idx-2]
-            VQE_run_function(config_data, ordering=oredring, incremental_index=incr_idx)
+            ordering = ordering_list[incr_idx-2]
+            VQE_run_function(config_data, ordering=ordering, incremental_index=incr_idx)
     else:
         VQE_run_function(config_data)
     

@@ -99,7 +99,6 @@ class BIN_VQE():
         else:
             print("ERROR: datafile not found\n")
             exit()
-        
         self.integrals = [[],[],[]]
         if ordering == None:
             for i in len(integrals[0]):
@@ -109,8 +108,6 @@ class BIN_VQE():
             if len(ordering) != self.M:
                 print("ERROR: mismatch in ordering list lenght")
                 exit()
-            print("ORDERING")
-            print(ordering)
             for i in range(self.M):
                 if i not in ordering:
                     print("ERROR: element {} missing in ordering list".format(i))
@@ -125,17 +122,6 @@ class BIN_VQE():
                             self.integrals[1].append(c)
                             self.integrals[2].append(element)
                             break
-            print("\nOld ordering")
-            print("rows: {}".format(integrals[0]))
-            print("cows: {}".format(integrals[1]))
-            print("elements:")
-            print(integrals[2])
-            print("\nNew ordering")
-            print("rows: {}".format(self.integrals[0]))
-            print("cows: {}".format(self.integrals[1]))
-            print("elements:")
-            print(self.integrals[2])
-            print("\n")
         self.qubits = range(self.N)
         self.num_params = 2*(1+self.depth)*self.N
         if 2**self.N != self.M:
@@ -193,6 +179,7 @@ class BIN_VQE():
             print("VQE CLASS INITIALIZATION:")
             print(" -> Total number of basis functions: {}".format(self.M))
             print(" ---> Required number of Qubits: {}".format(self.N))
+            print(" ---> Ordering: {}".format(ordering))
             print(" -> Non-zero matrix elements: {} of {}".format(len(self.integrals[2]), self.M**2))
             print(" ---> Matrix element threshold: {}".format(self.threshold))
             if self.expect_method == "direct":
