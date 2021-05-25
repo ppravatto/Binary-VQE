@@ -455,9 +455,10 @@ class BIN_VQE():
                 print("ERROR: {} parameters are insufficient for a {} qubits RyRz network of depth {}".format(len(inital_parameters), self.N, self.depth))
                 exit()
             self.parameters = inital_parameters
-        print("Initial parameters for the RyRz variational form:")
-        print(self.parameters)
-        print("")
+        if verbose==True:
+            print("Initial parameters for the RyRz variational form:")
+            print(self.parameters)
+            print("")
         if(filename != None):
             datafile = open(filename, 'w')
         
@@ -490,17 +491,18 @@ class BIN_VQE():
                 constraints.append(u)
             return constraints
 
-        print("OPTIMIZATION STARTED", flush=True)
+        if verbose==True:
+            print("OPTIMIZATION STARTED", flush=True)
         if method == 'Nelder-Mead':
             options = {'adaptive':True, 'maxiter':max_iter, 'fatol':tol}
             opt_results = opt.minimize(target_function, self.parameters, method='Nelder-Mead',callback=callback_function , options=options)
         elif method == 'COBYLA':
             constr = get_opt_constraints()
-            options = {'rhobeg':np.pi, 'tol':tol, 'disp':True, 'maxiter':max_iter, 'catol':1e-4}
+            options = {'rhobeg':np.pi, 'tol':tol, 'disp':verbose, 'maxiter':max_iter, 'catol':1e-4}
             opt_results = opt.minimize(target_function, self.parameters, method='COBYLA', constraints=constr, options=options)
         elif method == 'SLSQP':
             constr = get_opt_constraints()
-            options = {'ftol':tol, 'disp':True, 'maxiter':max_iter}
+            options = {'ftol':tol, 'disp':verbose, 'maxiter':max_iter}
             opt_results = opt.minimize(target_function, self.parameters, method='SLSQP', constraints=constr, callback=callback_function, options=options)
         elif method == 'SPSA':
             default_spsa_c = [0.6283185307179586, 0.1, 0.602, 0.101, 0]
@@ -508,7 +510,8 @@ class BIN_VQE():
             for i in range(5):
                 label = "c" + str(i)
                 _c.append(optimizer_options[label] if label in optimizer_options else default_spsa_c[i])
-            print("-> SPSA optimizer coefficients:", _c)
+            if verbose==True:
+                print("-> SPSA optimizer coefficients:", _c)
             optimizer = myopt.MySPSA(maxiter=max_iter, c0=_c[0], c1=_c[1], c2=_c[2], c3=_c[3], c4=_c[4])
             bounds = [(0, 2*np.pi) for i in range(self.num_params)]        
             opt_results, final_expectation, spsa_history = optimizer.optimize(self.num_params, target_function, variable_bounds=bounds, initial_point=self.parameters)
@@ -517,10 +520,13 @@ class BIN_VQE():
             callback_function(opt_results)
         else:
             print("ERROR: {} is not a supported optimization method".format(method))
+            exit()
         if method != 'SPSA':
-            print("OPTIMIZATION: {}".format(opt_results.message), flush=True)
+            if verbose==True:
+                print("OPTIMIZATION: {}".format(opt_results.message), flush=True)
         else:
-            print("OPTIMIZATION ENDED", flush=True)
+            if verbose==True:
+                print("OPTIMIZATION ENDED", flush=True)
         self.parameters = opt_results.x if method != 'SPSA' else opt_results
         self.expectation_value = self.compute_expectation_value(self.parameters)
         if(filename != None):
