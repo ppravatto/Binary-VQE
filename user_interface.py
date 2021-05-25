@@ -341,6 +341,10 @@ def finalize_execution(config_data, incremental_index=None):
     VQE_matrix_filename = config_data["VQE_file"] if incremental_index == None else config_data["VQE_file"] + "_{}Q.txt".format(incremental_index)
     VQE_copy_file = "./" + config_data["base_folder"] + "/" + VQE_matrix_filename
     shutil.copyfile(VQE_matrix_filename, VQE_copy_file)
+    if config_data["incremental"] == True:
+        Inc_basis_filename = config_data["Inc_basis_root"] + "_{}Q.txt".format(incremental_index)
+        Inc_basis_copy_file = "./" + config_data["base_folder"] + "/" + Inc_basis_filename
+        shutil.copyfile(Inc_basis_filename, Inc_basis_copy_file)
     if config_data["target_file"] != None:
         target_copy_file = "./" + config_data["base_folder"] + "/" + config_data["target_file"]
         shutil.copyfile(config_data["target_file"], target_copy_file)
@@ -356,17 +360,23 @@ def load_array_for_file(filename, dtype=float):
 
 def save_report(config_data, real, imag, path=None):
     folder = config_data["base_folder"] if path==None else path
-    tail = "_report.txt" if config_data["incremental"] == False else "_report_incr_{}Q.txt".format(config_data["N"])
+    tail = "_report_incr_{}Q.txt".format(config_data["N"]) if (config_data["incremental"] == True and config_data["VQE_statistic_flag"] == False) else "_report.txt"
     report_file = folder + "/" + config_data["contracted_name"] + tail
     report = open(report_file, 'w')
     report.write("Date: {}\n".format(config_data["date"]))
     report.write("Time: {}\n\n".format(config_data["time"]))
-    report.write("VQE SETTINGS:\n")
+    if config_data["incremental"] == True:
+        report.write("INCREMENTAL RUN\n")
+        report.write("Type: {}\n".format("single" if config_data["VQE_statistic_flag"] == False else "sampling"))
+        if config_data["VQE_statistic_flag"] == True:
+            report.write("Final qubit count: {}\n".format(config_data["Inc_max_Q"]))
+            report.write("-> WARNING: all the data reported in the following are referred to the maximum qubit dimension\n")
+    report.write("\nVQE SETTINGS:\n")
     report.write("Entangler type: {}, depth: {}\n".format(config_data["VQE_entanglement"], config_data["VQE_depth"]))
     if config_data["RyRz_param_file"] != None:
         RyRz_params = load_array_for_file(config_data["RyRz_param_file"])
         report.write("Adopted user defined RyRz parameters:\n{}\n".format(RyRz_params))
-    if config_data["incremental"] == True:
+    if config_data["incremental"] == True and config_data["VQE_statistic_flag"] == False:
         if config_data["N"] != 2:
             RyRz_incr_filename = config_data["iteration_folder"] + "/incremental_data/" + "RyRz_incremental_{}Q.txt".format(config_data["N"]-1)
             RyRz_params = load_array_for_file(RyRz_incr_filename)

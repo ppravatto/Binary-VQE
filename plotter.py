@@ -48,6 +48,9 @@ class Plot_VQE_stats():
         self.labels=[]
         self.legend=False
     
+    def clear(self):
+        plt.cla()
+    
     def add_datafile(self, filename, label=None):
         self.filenames.append(filename)
         self.labels.append(label)
@@ -108,9 +111,11 @@ class Plot_VQE_stats():
             plt.show()
     
 
-def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True):
+def plot_vqe_statistic(filename, bins=100, gauss=False, target=None, save_plot=True, path=None, show=True, clear=False):
     myplot = Plot_VQE_stats(bins=bins, gauss=gauss, target=target, save_plot=save_plot, path=path, show=show)
     myplot.add_datafile(filename)
+    if clear == True:
+        myplot.clear()
     myplot.plot()
 
 def plot_vqe_statistic_comparison(input_data, statevector=None, statevector_type="average", xlabel=None, ylabel=None, path=None, save=True, marker=None):

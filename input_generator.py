@@ -17,6 +17,7 @@ input_buffer = input('''Select the type of input file to generate:
   B) Regular VQE with/without converged statistic sampling
   C) Generate a RyRz parameter file
   D) Single incremental VQE run
+  E) Statistical sampling of incremental configurations
 
 Selection (default: A): ''')
 print("")
@@ -41,6 +42,9 @@ else:
     Incr_flag = False
   elif input_buffer.upper() == "D":
     VQE_stat = False
+    Incr_flag = True
+  elif input_buffer.upper() == "E":
+    VQE_stat = True
     Incr_flag = True
 
   filename = input("Select input filename (default: input.txt): ")
