@@ -85,7 +85,8 @@ if rank == 0:
     data_buffer = []
     config_data = None
     if len(sys.argv)==1:
-        input_buffer = input("Do you want to perform an incremental VQE calculation (Y/N)?")
+        print("\nSTARTING MPI CALCULATION:")
+        input_buffer = input("\nDo you want to perform an incremental VQE calculation (Y/N)? ")
         if input_buffer.upper() == "Y":
             incr_flag = True
         else:
@@ -214,8 +215,10 @@ if rank==0:
             show=show_flag
             )
 
+    config_data["average_VQE_stat"] = average
     real = average[0] if config_data["incremental"] == False else average[-1][0]
     imag = average[1] if config_data["incremental"] == False else average[-1][1]
+    
     user_interface.save_report(config_data, real, imag)
     
     if config_data["auto_flag"] == True:
@@ -224,12 +227,12 @@ if rank==0:
             if os.path.isdir(temp_folder):
                 shutil.rmtree(temp_folder)
             os.mkdir(temp_folder)
-            user_interface.save_report(config_data, average[0], average[1], path=temp_folder)
+            user_interface.save_report(config_data, real, imag, path=temp_folder)
             temp_picture_name = temp_folder + "/" + config_data["contracted_name"] + "_VQE_scan.png"
             shutil.copyfile(picture_name, temp_picture_name)
     
     print("Average expectation value:")
-    print("Real part: {}".format(average[0]))
-    print("Immaginary part: {}".format(average[1]))
+    print("Real part: {}".format(real))
+    print("Immaginary part: {}".format(imag))
     print("-------------------------------------------------------------")
     print("NORMAL TERMINATION: runtime: {}s".format(runtime))

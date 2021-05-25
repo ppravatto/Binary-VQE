@@ -404,10 +404,22 @@ def save_report(config_data, real, imag, path=None):
         report.write("Number of samples: {}\n".format(config_data["VQE_num_samples"]))
     else:
         report.write("CALCULATION DATA:\n")
-    report.write("Expectation value: Real part: {}, Imag part: {}\n".format(real, imag))
-    if config_data["target_file"] != None:
-        rel_error = (real-config_data["target"])/config_data["target"]
-        report.write("Theoretical value: {}, Relative Error: {}\n".format(config_data["target"], rel_error))
+    if config_data["incremental"] == False or config_data["VQE_statistic_flag"] == False:
+        report.write("Expectation value: Real part: {}, Imag part: {}\n".format(real, imag))
+        if config_data["target_file"] != None:
+            rel_error = (real-config_data["target"])/config_data["target"]
+            report.write("Theoretical value: {}, Relative Error: {}\n".format(config_data["target"], rel_error))
+    else:
+        report.write("Expectation value:\n")
+        for i in range(2, config_data["Inc_max_Q"]+1):
+            Re = config_data["average_VQE_stat"][i-2][0]
+            Im = config_data["average_VQE_stat"][i-2][1]
+            report.write("Qubits: {}   Real part: {}, Imag part: {}\n".format(i, Re, Im))
+            if config_data["target_file"] != None:
+                rel_error = (Re-config_data["target"])/config_data["target"]
+                report.write("    Theoretical value: {}, Relative Error: {}\n".format(config_data["target"], rel_error))
+
+    
     report.write("Runtime: {}s\n".format(config_data["runtime"]))
     report.close()
 
