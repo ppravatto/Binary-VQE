@@ -123,8 +123,6 @@ if config_data["incremental"] == True:
 else:
     local_data = [[],[]]
 
-config_data = comm.bcast(config_data, root=0)    
-
 myload = (config_data["workload"])[rank]
 for VQE_stat_iter in range(myload):
 

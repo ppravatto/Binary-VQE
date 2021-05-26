@@ -39,7 +39,7 @@ def get_user_input(VQE_statistic_flag=False, auto_flag=False, incremental_flag=F
         input_buffer = "VQE.txt" if input_buffer == "" else input_buffer
         if auto_flag==False and os.path.isfile(input_buffer)==False:
             print("ERROR: {} datafile not found\n".format(input_buffer))
-        exit()
+            exit()
     else:
         print("-> INCREMENTAL PROCEDURE SELECTED\n")
         input_buffer = input("""Select the Hamiltonian matrix root filename (default: "VQE"): """)
