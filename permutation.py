@@ -153,4 +153,4 @@ if rank==0:
                 file.write("{}\t{}\n".format(dict["real"][j], dict["imag"][j]))
 
     for dict in data:
-        print("{}\t{}\t{}".format(dict["ordering"], dict["average_real"], dict["average_imag"]))
+        print("{}\t{}\t{}\t{}".format(dict["ordering"], dict["average_real"], dict["average_imag"], min(dict["real"])))

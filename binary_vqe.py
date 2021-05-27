@@ -216,7 +216,7 @@ class BIN_VQE():
             #qc.rz(param[qubit+self.N], qubit)
             qc.ry(param[qubit*2*(self.depth+1)], qubit)
             qc.rz(param[qubit*2*(self.depth+1)+1], qubit)
-        for layer in range(1, self.depth+1):
+        for layer in range(0, self.depth):
             for control in range(self.N-1):
                 for target in range(control+1, self.N):
                     if (self.entanglement == "linear" and target > control+1):
@@ -227,8 +227,8 @@ class BIN_VQE():
             for qubit in self.qubits:
                 #qc.ry(param[qubit+2*layer*self.N], qubit)
                 #qc.rz(param[qubit+(2*layer+1)*self.N], qubit)    
-                qc.ry(param[qubit*2*(self.depth+1)+2], qubit)
-                qc.rz(param[qubit*2*(self.depth+1)+3], qubit)  
+                qc.ry(param[qubit*2*(self.depth+1)+2+(2*layer)], qubit)
+                qc.rz(param[qubit*2*(self.depth+1)+3+(2*layer)], qubit)  
         return qc
     
     def measure(self, post_rotation, measure=True):
