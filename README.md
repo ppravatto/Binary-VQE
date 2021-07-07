@@ -53,7 +53,7 @@ mpiexec -n <number-of-task> python3 MPI_scan.py <input_file>
 for a multiple VQE calculation. Keep in mind that the indirect mode will still save all the graphs and data but no interactive windows will be open.
 
 ## Currently supported optimizers
-- Nelder-mead
-- COBYLA
-- SLSQP
-- SPSA
+- Nelder-mead (from SciPy)
+- COBYLA (from SciPy)
+- SLSQP (from SciPy)
+- SPSA (modified version based on Qiskit)

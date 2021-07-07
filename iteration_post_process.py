@@ -180,7 +180,7 @@ else:
 
     single = True if input_buffer.upper() == "A" else False
 
-    collect_infro = False
+    collect_info = False
     if single == False:
         input_buffer = input("\nDo you want to save information for a multiple comparison (y/n)?")
         collect_info = True if input_buffer.upper() == "Y" else False
