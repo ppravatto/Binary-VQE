@@ -8,11 +8,15 @@ import random as rnd
 from qiskit.quantum_info.operators.pauli import Pauli
 from qiskit.quantum_info.operators import Operator
 from qiskit import Aer
-from qiskit.aqua import QuantumInstance
-from qiskit.aqua.operators import PauliExpectation, AerPauliExpectation, CircuitSampler, StateFn, CircuitStateFn, WeightedPauliOperator
+#from qiskit.aqua import QuantumInstance
+#from qiskit.aqua.operators import PauliExpectation, AerPauliExpectation, CircuitSampler, StateFn, CircuitStateFn, WeightedPauliOperator
+from qiskit.opflow import PauliExpectation, AerPauliExpectation, StateFn, CircuitStateFn, WeightedPauliOperator
+from qiskit.opflow.converters import CircuitSampler
 from qiskit.providers.aer.noise import NoiseModel
-from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
-from qiskit.aqua.quantum_instance import QuantumInstance
+#from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
+from qiskit.utils.mitigation import CompleteMeasFitter
+#from qiskit.aqua.quantum_instance import QuantumInstance
+from qiskit.utils import QuantumInstance
 
 I = complex(0, 1)
 IBM_basis_gates = ['id', 'rz', 'sx', 'x', 'cx']
